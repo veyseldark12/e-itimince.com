@@ -1,0 +1,482 @@
+// src/views/PuanHesaplamaView.jsx
+
+import { useState } from 'react';
+import { APP_THEME } from '../constants/theme';
+
+// ---------- YKS SORU LİMİTLERİ ----------
+const MAX_SORU = {
+  TYT: { turkce: 40, sosyal: 20, matematik: 40, fen: 20 },
+  AYT: {
+    matematik: 40, fizik: 14, kimya: 13, biyoloji: 13,
+    edebiyat: 24, tarih1: 10, cografya1: 6,
+    tarih2: 11, cografya2: 11, felsefe: 12, din: 6, dil: 80
+  }
+};
+
+// ---------- 1. ÖSYM 2026 HAM SINAV PUANLARI YIĞINSAL DAĞILIMI (GÖRSEL 1) ----------
+const HAM_YIGINSAL_2026 = {
+  TYT: [
+    { puan: 500, siralama: 5 }, { puan: 480, siralama: 822 }, { puan: 460, siralama: 5524 },
+    { puan: 440, siralama: 17050 }, { puan: 420, siralama: 37770 }, { puan: 400, siralama: 67394 },
+    { puan: 380, siralama: 106404 }, { puan: 360, siralama: 155008 }, { puan: 340, siralama: 218156 },
+    { puan: 320, siralama: 302758 }, { puan: 300, siralama: 417935 }, { puan: 280, siralama: 577094 },
+    { puan: 260, siralama: 787244 }, { puan: 240, siralama: 1045340 }, { puan: 220, siralama: 1332391 },
+    { puan: 200, siralama: 1630698 }, { puan: 180, siralama: 1914717 }, { puan: 160, siralama: 2125244 },
+    { puan: 140, siralama: 2184873 }, { puan: 120, siralama: 2187723 }, { puan: 100, siralama: 2187743 }
+  ],
+  SAY: [
+    { puan: 500, siralama: 1 }, { puan: 480, siralama: 1453 }, { puan: 460, siralama: 8786 },
+    { puan: 440, siralama: 22370 }, { puan: 420, siralama: 39624 }, { puan: 400, siralama: 58728 },
+    { puan: 380, siralama: 78806 }, { puan: 360, siralama: 100553 }, { puan: 340, siralama: 125045 },
+    { puan: 320, siralama: 153304 }, { puan: 300, siralama: 187034 }, { puan: 280, siralama: 228643 },
+    { puan: 260, siralama: 279885 }, { puan: 240, siralama: 344536 }, { puan: 220, siralama: 430074 },
+    { puan: 200, siralama: 549793 }, { puan: 180, siralama: 721488 }, { puan: 160, siralama: 923753 },
+    { puan: 140, siralama: 1078515 }, { puan: 120, siralama: 1134006 }, { puan: 100, siralama: 1135718 }
+  ],
+  EA: [
+    { puan: 500, siralama: 1 }, { puan: 480, siralama: 52 }, { puan: 460, siralama: 307 },
+    { puan: 440, siralama: 874 }, { puan: 420, siralama: 2097 }, { puan: 400, siralama: 4545 },
+    { puan: 380, siralama: 9486 }, { puan: 360, siralama: 23452 }, { puan: 340, siralama: 50608 },
+    { puan: 320, siralama: 89520 }, { puan: 300, siralama: 140784 }, { puan: 280, siralama: 210499 },
+    { puan: 260, siralama: 308127 }, { puan: 240, siralama: 440752 }, { puan: 220, siralama: 615366 },
+    { puan: 200, siralama: 832251 }, { puan: 180, siralama: 1069239 }, { puan: 160, siralama: 1272506 },
+    { puan: 140, siralama: 1391240 }, { puan: 120, siralama: 1420558 }, { puan: 100, siralama: 1421290 }
+  ],
+  SOZ: [
+    { puan: 500, siralama: 1 }, { puan: 480, siralama: 10 }, { puan: 460, siralama: 74 },
+    { puan: 440, siralama: 214 }, { puan: 420, siralama: 560 }, { puan: 400, siralama: 1418 },
+    { puan: 380, siralama: 3936 }, { puan: 360, siralama: 10259 }, { puan: 340, siralama: 23653 },
+    { puan: 320, siralama: 47292 }, { puan: 300, siralama: 86560 }, { puan: 280, siralama: 148959 },
+    { puan: 260, siralama: 238848 }, { puan: 240, siralama: 360487 }, { puan: 220, siralama: 515916 },
+    { puan: 200, siralama: 699304 }, { puan: 180, siralama: 873860 }, { puan: 160, siralama: 998826 },
+    { puan: 140, siralama: 1065157 }, { puan: 120, siralama: 1084720 }, { puan: 100, siralama: 1085698 }
+  ],
+  DIL: [
+    { puan: 500, siralama: 5 }, { puan: 480, siralama: 118 }, { puan: 460, siralama: 628 },
+    { puan: 440, siralama: 1795 }, { puan: 420, siralama: 3632 }, { puan: 400, siralama: 6683 },
+    { puan: 380, siralama: 11576 }, { puan: 360, siralama: 18265 }, { puan: 340, siralama: 26469 },
+    { puan: 320, siralama: 35020 }, { puan: 300, siralama: 43883 }, { puan: 280, siralama: 52590 },
+    { puan: 260, siralama: 61992 }, { puan: 240, siralama: 72025 }, { puan: 220, siralama: 82982 },
+    { puan: 200, siralama: 94735 }, { puan: 180, siralama: 107579 }, { puan: 160, siralama: 120099 },
+    { puan: 140, siralama: 128950 }, { puan: 120, siralama: 132443 }, { puan: 100, siralama: 132826 }
+  ]
+};
+
+// ---------- 2. ÖSYM 2026 YERLEŞTİRME PUANLARI YIĞINSAL DAĞILIMI (GÖRSEL 2) ----------
+const YERLESTIRME_YIGINSAL_2026 = {
+  TYT: [
+    { puan: 550, siralama: 112 }, { puan: 530, siralama: 2045 }, { puan: 510, siralama: 8638 },
+    { puan: 490, siralama: 22600 }, { puan: 470, siralama: 45313 }, { puan: 450, siralama: 76021 },
+    { puan: 430, siralama: 115071 }, { puan: 410, siralama: 163211 }, { puan: 390, siralama: 225038 },
+    { puan: 370, siralama: 305570 }, { puan: 350, siralama: 412011 }, { puan: 330, siralama: 553526 },
+    { puan: 310, siralama: 735519 }, { puan: 290, siralama: 961261 }, { puan: 270, siralama: 1219171 },
+    { puan: 250, siralama: 1499060 }, { puan: 230, siralama: 1782951 }, { puan: 210, siralama: 2033331 },
+    { puan: 190, siralama: 2166477 }, { puan: 170, siralama: 2186977 }, { puan: 150, siralama: 2187734 },
+    { puan: 130, siralama: 2187742 }, { puan: 115, siralama: 2187743 }
+  ],
+  SAY: [
+    { puan: 550, siralama: 154 }, { puan: 530, siralama: 3500 }, { puan: 510, siralama: 12887 },
+    { puan: 490, siralama: 27402 }, { puan: 470, siralama: 44919 }, { puan: 450, siralama: 63669 },
+    { puan: 430, siralama: 83511 }, { puan: 410, siralama: 105112 }, { puan: 390, siralama: 129485 },
+    { puan: 370, siralama: 157778 }, { puan: 350, siralama: 191247 }, { puan: 330, siralama: 232317 },
+    { puan: 310, siralama: 282213 }, { puan: 290, siralama: 344726 }, { puan: 270, siralama: 425443 },
+    { puan: 250, siralama: 533920 }, { puan: 230, siralama: 681176 }, { puan: 210, siralama: 858167 },
+    { puan: 190, siralama: 1019046 }, { puan: 170, siralama: 1117304 }, { puan: 150, siralama: 1135198 },
+    { puan: 130, siralama: 1135713 }, { puan: 115, siralama: 1135718 }
+  ],
+  EA: [
+    { puan: 550, siralama: 12 }, { puan: 530, siralama: 98 }, { puan: 510, siralama: 394 },
+    { puan: 490, siralama: 1118 }, { puan: 470, siralama: 2482 }, { puan: 450, siralama: 5299 },
+    { puan: 430, siralama: 12363 }, { puan: 410, siralama: 29700 }, { puan: 390, siralama: 58772 },
+    { puan: 370, siralama: 97839 }, { puan: 350, siralama: 148570 }, { puan: 330, siralama: 215631 },
+    { puan: 310, siralama: 307918 }, { puan: 290, siralama: 429479 }, { puan: 270, siralama: 585271 },
+    { puan: 250, siralama: 775922 }, { puan: 230, siralama: 990764 }, { puan: 210, siralama: 1196809 },
+    { puan: 190, siralama: 1347025 }, { puan: 170, siralama: 1412649 }, { puan: 150, siralama: 1421093 },
+    { puan: 130, siralama: 1421289 }, { puan: 115, siralama: 1421290 }
+  ],
+  SOZ: [
+    { puan: 550, siralama: 4 }, { puan: 530, siralama: 14 }, { puan: 510, siralama: 69 },
+    { puan: 490, siralama: 221 }, { puan: 470, siralama: 606 }, { puan: 450, siralama: 1566 },
+    { puan: 430, siralama: 4058 }, { puan: 410, siralama: 10184 }, { puan: 390, siralama: 22750 },
+    { puan: 370, siralama: 45237 }, { puan: 350, siralama: 82479 }, { puan: 330, siralama: 140496 },
+    { puan: 310, siralama: 223004 }, { puan: 290, siralama: 333238 }, { puan: 270, siralama: 474443 },
+    { puan: 250, siralama: 642816 }, { puan: 230, siralama: 814264 }, { puan: 210, siralama: 953036 },
+    { puan: 190, siralama: 1040347 }, { puan: 170, siralama: 1078859 }, { puan: 150, siralama: 1085505 },
+    { puan: 130, siralama: 1085697 }, { puan: 115, siralama: 1085698 }
+  ],
+  DIL: [
+    { puan: 550, siralama: 14 }, { puan: 530, siralama: 231 }, { puan: 510, siralama: 942 },
+    { puan: 490, siralama: 2252 }, { puan: 470, siralama: 4241 }, { puan: 450, siralama: 7472 },
+    { puan: 430, siralama: 12254 }, { puan: 410, siralama: 18566 }, { puan: 390, siralama: 26352 },
+    { puan: 370, siralama: 34585 }, { puan: 350, siralama: 43129 }, { puan: 330, siralama: 51784 },
+    { puan: 310, siralama: 60948 }, { puan: 290, siralama: 70670 }, { puan: 270, siralama: 81109 },
+    { puan: 250, siralama: 92274 }, { puan: 230, siralama: 104127 }, { puan: 210, siralama: 116152 },
+    { puan: 190, siralama: 125789 }, { puan: 170, siralama: 131233 }, { puan: 150, siralama: 132714 },
+    { puan: 130, siralama: 132825 }, { puan: 115, siralama: 132826 }
+  ]
+};
+
+// Hassas Lineer İnterpolasyon ile Sıralama Hesabı
+const hesaplaSiralama = (puan, tur, veriTablosu) => {
+  const veri = veriTablosu[tur];
+  if (!veri || !puan || puan <= 0) return null;
+
+  const enYuksekPuan = veri[0].puan;
+  if (puan >= enYuksekPuan) {
+    const minSiralama = Math.max(1, Math.round(veri[0].siralama * ((enYuksekPuan + 20 - puan) / 20)));
+    return minSiralama.toLocaleString('tr-TR');
+  }
+
+  const sonElement = veri[veri.length - 1];
+  if (puan <= sonElement.puan) {
+    return `>${sonElement.siralama.toLocaleString('tr-TR')}`;
+  }
+
+  for (let i = 0; i < veri.length - 1; i++) {
+    const ustPuan = veri[i].puan;
+    const ustSira = veri[i].siralama;
+    const altPuan = veri[i + 1].puan;
+    const altSira = veri[i + 1].siralama;
+
+    if (puan <= ustPuan && puan >= altPuan) {
+      const oran = (ustPuan - puan) / (ustPuan - altPuan);
+      const tahminiSira = Math.round(ustSira + oran * (altSira - ustSira));
+      return tahminiSira.toLocaleString('tr-TR');
+    }
+  }
+
+  return null;
+};
+
+// ÖSYM Standart Net Hesabı
+const calcNet = (d, y) => {
+  const dogru = Number(d) || 0;
+  const yanlis = Number(y) || 0;
+  return Math.max(0, dogru - (yanlis / 4));
+};
+
+// Input bileşeni
+const InputRow = ({ sinav, dersAdi, dersKey, maxSoru, data, handleInputChange, theme }) => {
+  const net = calcNet(data.d, data.y);
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+      <span style={{ color: theme.textPrimary, fontSize: '14px', fontWeight: '600', flex: 1 }}>{dersAdi}</span>
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        
+        {/* Doğru Girişi */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <span style={{ fontSize: '10px', color: '#10b981', marginBottom: '2px', fontWeight: '700' }}>D</span>
+          <input
+            type="number"
+            min="0"
+            value={data.d === 0 ? '' : data.d}
+            onChange={(e) => handleInputChange(sinav, dersKey, 'd', e.target.value, maxSoru)}
+            placeholder="0"
+            style={{
+              width: '48px',
+              padding: '6px',
+              borderRadius: '6px',
+              border: '1.5px solid #10b981',
+              background: '#334155',
+              color: '#ffffff',
+              fontSize: '15px',
+              fontWeight: '700',
+              textAlign: 'center',
+              outline: 'none'
+            }}
+          />
+        </div>
+
+        {/* Yanlış Girişi */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <span style={{ fontSize: '10px', color: '#ef4444', marginBottom: '2px', fontWeight: '700' }}>Y</span>
+          <input
+            type="number"
+            min="0"
+            value={data.y === 0 ? '' : data.y}
+            onChange={(e) => handleInputChange(sinav, dersKey, 'y', e.target.value, maxSoru)}
+            placeholder="0"
+            style={{
+              width: '48px',
+              padding: '6px',
+              borderRadius: '6px',
+              border: '1.5px solid #ef4444',
+              background: '#334155',
+              color: '#ffffff',
+              fontSize: '15px',
+              fontWeight: '700',
+              textAlign: 'center',
+              outline: 'none'
+            }}
+          />
+        </div>
+
+        {/* Net Göstergesi */}
+        <div style={{ width: '55px', textAlign: 'right', color: theme.accentMain, fontWeight: '700', fontSize: '15px' }}>
+          {net.toFixed(2)}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export function PuanHesaplamaView() {
+  const theme = APP_THEME;
+
+  const [tyt, setTyt] = useState({
+    turkce: { d: 0, y: 0 }, sosyal: { d: 0, y: 0 },
+    matematik: { d: 0, y: 0 }, fen: { d: 0, y: 0 }
+  });
+
+  const [ayt, setAyt] = useState({
+    matematik: { d: 0, y: 0 }, fizik: { d: 0, y: 0 }, kimya: { d: 0, y: 0 }, biyoloji: { d: 0, y: 0 },
+    edebiyat: { d: 0, y: 0 }, tarih1: { d: 0, y: 0 }, cografya1: { d: 0, y: 0 },
+    tarih2: { d: 0, y: 0 }, cografya2: { d: 0, y: 0 }, felsefe: { d: 0, y: 0 }, din: { d: 0, y: 0 },
+    dil: { d: 0, y: 0 }
+  });
+
+  const [diplomaNotu, setDiplomaNotu] = useState(75);
+  const [sonuc, setSonuc] = useState(null);
+
+  const handleInputChange = (sinav, ders, tip, deger, maxSoru) => {
+    let val = parseInt(deger, 10);
+    if (isNaN(val) || val < 0) val = 0;
+    if (val > maxSoru) val = maxSoru;
+
+    const targetObj = sinav === 'TYT' ? tyt : ayt;
+    const current = targetObj[ders];
+
+    const digerTip = tip === 'd' ? 'y' : 'd';
+    const digerVal = Number(current[digerTip]) || 0;
+    if (val + digerVal > maxSoru) {
+      val = maxSoru - digerVal;
+    }
+
+    if (sinav === 'TYT') {
+      setTyt(prev => ({ ...prev, [ders]: { ...current, [tip]: val } }));
+    } else {
+      setAyt(prev => ({ ...prev, [ders]: { ...current, [tip]: val } }));
+    }
+  };
+
+  const hesapla = () => {
+    const numDiploma = Number(diplomaNotu) || 0;
+    const obpKatkisi = Number((numDiploma * 0.6).toFixed(2));
+
+    const tNet = {
+      turkce: calcNet(tyt.turkce.d, tyt.turkce.y),
+      sosyal: calcNet(tyt.sosyal.d, tyt.sosyal.y),
+      matematik: calcNet(tyt.matematik.d, tyt.matematik.y),
+      fen: calcNet(tyt.fen.d, tyt.fen.y),
+    };
+
+    const aNet = {};
+    Object.keys(ayt).forEach(k => {
+      aNet[k] = calcNet(ayt[k].d, ayt[k].y);
+    });
+
+    // TYT Ham Puanı
+    const tytPuan = Number((
+      100 + 
+      (tNet.turkce * 3.3) + 
+      (tNet.matematik * 3.3) + 
+      (tNet.sosyal * 3.4) + 
+      (tNet.fen * 3.4)
+    ).toFixed(2));
+
+    // AYT için TYT Katkısı
+    const alanTytKatkisi = 
+      (tNet.turkce * 1.32) + 
+      (tNet.matematik * 1.32) + 
+      (tNet.sosyal * 1.36) + 
+      (tNet.fen * 1.36);
+
+    const alanTaban = 100 + alanTytKatkisi;
+
+    const sonuclar = {};
+    const turler = ['SAY', 'EA', 'SOZ', 'DIL'];
+
+    turler.forEach(tur => {
+      let aytKatkisi = 0;
+      
+      if (tur === 'SAY') {
+        aytKatkisi = (aNet.matematik * 3) + (aNet.fizik * 2.85) + (aNet.kimya * 3.07) + (aNet.biyoloji * 3.07);
+      } else if (tur === 'EA') {
+        aytKatkisi = (aNet.matematik * 3) + (aNet.edebiyat * 3) + (aNet.tarih1 * 2.8) + (aNet.cografya1 * 3.33);
+      } else if (tur === 'SOZ') {
+        aytKatkisi = (aNet.edebiyat * 3) + (aNet.tarih1 * 2.8) + (aNet.cografya1 * 3.33) + 
+                     (aNet.tarih2 * 2.91) + (aNet.cografya2 * 2.91) + (aNet.felsefe * 3) + (aNet.din * 3.33);
+      } else if (tur === 'DIL') {
+        aytKatkisi = (aNet.dil * 3);
+      }
+
+      const hamPuan = Number((alanTaban + aytKatkisi).toFixed(2));
+      const yerlesmePuan = Number((hamPuan + obpKatkisi).toFixed(2));
+
+      sonuclar[tur] = {
+        hamPuan,
+        yerlesmePuan,
+        hamSiralama: hesaplaSiralama(hamPuan, tur, HAM_YIGINSAL_2026),
+        yerlesmeSiralama: hesaplaSiralama(yerlesmePuan, tur, YERLESTIRME_YIGINSAL_2026)
+      };
+    });
+
+    const tytYerlesme = Number((tytPuan + obpKatkisi).toFixed(2));
+
+    setSonuc({
+      tytPuan,
+      tytYerlesmePuan: tytYerlesme,
+      tytHamSiralama: hesaplaSiralama(tytPuan, 'TYT', HAM_YIGINSAL_2026),
+      tytYerlesmeSiralama: hesaplaSiralama(tytYerlesme, 'TYT', YERLESTIRME_YIGINSAL_2026),
+      obp: obpKatkisi,
+      alanlar: sonuclar
+    });
+  };
+
+  return (
+    <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+      <h2 style={{ color: theme.accentMain, fontSize: '32px', marginBottom: '8px', textAlign: 'center' }}>
+        📊 2026 YKS Puan & Sıralama Hesaplama
+      </h2>
+      <p style={{ color: theme.textSecondary, marginBottom: '30px', textAlign: 'center' }}>
+        Resmi ÖSYM 2026 Yığılsal Dağılım Tablolarıyla (Ham + Yerleştirme) Hesaplar.
+      </p>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+        <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '16px', border: theme.cardBorder }}>
+          <h4 style={{ color: theme.textPrimary, fontSize: '18px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            📝 TYT <span style={{ fontSize: '12px', fontWeight: 'normal', color: theme.textSecondary }}>(Temel Yeterlilik)</span>
+          </h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <InputRow sinav="TYT" dersAdi="Türkçe" dersKey="turkce" maxSoru={MAX_SORU.TYT.turkce} data={tyt.turkce} handleInputChange={handleInputChange} theme={theme} />
+            <InputRow sinav="TYT" dersAdi="Sosyal Bilimler" dersKey="sosyal" maxSoru={MAX_SORU.TYT.sosyal} data={tyt.sosyal} handleInputChange={handleInputChange} theme={theme} />
+            <InputRow sinav="TYT" dersAdi="Matematik" dersKey="matematik" maxSoru={MAX_SORU.TYT.matematik} data={tyt.matematik} handleInputChange={handleInputChange} theme={theme} />
+            <InputRow sinav="TYT" dersAdi="Fen Bilimleri" dersKey="fen" maxSoru={MAX_SORU.TYT.fen} data={tyt.fen} handleInputChange={handleInputChange} theme={theme} />
+          </div>
+        </div>
+
+        <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '16px', border: theme.cardBorder }}>
+          <h4 style={{ color: '#06b6d4', fontSize: '18px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            📐 SAY / EA <span style={{ fontSize: '12px', fontWeight: 'normal', color: theme.textSecondary }}>(Ortak Alanlar)</span>
+          </h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <InputRow sinav="AYT" dersAdi="Matematik" dersKey="matematik" maxSoru={MAX_SORU.AYT.matematik} data={ayt.matematik} handleInputChange={handleInputChange} theme={theme} />
+            <InputRow sinav="AYT" dersAdi="Fizik" dersKey="fizik" maxSoru={MAX_SORU.AYT.fizik} data={ayt.fizik} handleInputChange={handleInputChange} theme={theme} />
+            <InputRow sinav="AYT" dersAdi="Kimya" dersKey="kimya" maxSoru={MAX_SORU.AYT.kimya} data={ayt.kimya} handleInputChange={handleInputChange} theme={theme} />
+            <InputRow sinav="AYT" dersAdi="Biyoloji" dersKey="biyoloji" maxSoru={MAX_SORU.AYT.biyoloji} data={ayt.biyoloji} handleInputChange={handleInputChange} theme={theme} />
+            <InputRow sinav="AYT" dersAdi="Edebiyat" dersKey="edebiyat" maxSoru={MAX_SORU.AYT.edebiyat} data={ayt.edebiyat} handleInputChange={handleInputChange} theme={theme} />
+            <InputRow sinav="AYT" dersAdi="Tarih - 1" dersKey="tarih1" maxSoru={MAX_SORU.AYT.tarih1} data={ayt.tarih1} handleInputChange={handleInputChange} theme={theme} />
+            <InputRow sinav="AYT" dersAdi="Coğrafya - 1" dersKey="cografya1" maxSoru={MAX_SORU.AYT.cografya1} data={ayt.cografya1} handleInputChange={handleInputChange} theme={theme} />
+          </div>
+        </div>
+
+        <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '16px', border: theme.cardBorder }}>
+          <h4 style={{ color: '#ec4899', fontSize: '18px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            📖 SÖZ / DİL <span style={{ fontSize: '12px', fontWeight: 'normal', color: theme.textSecondary }}>(Sosyal 2 & Dil)</span>
+          </h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <InputRow sinav="AYT" dersAdi="Tarih - 2" dersKey="tarih2" maxSoru={MAX_SORU.AYT.tarih2} data={ayt.tarih2} handleInputChange={handleInputChange} theme={theme} />
+            <InputRow sinav="AYT" dersAdi="Coğrafya - 2" dersKey="cografya2" maxSoru={MAX_SORU.AYT.cografya2} data={ayt.cografya2} handleInputChange={handleInputChange} theme={theme} />
+            <InputRow sinav="AYT" dersAdi="Felsefe Grubu" dersKey="felsefe" maxSoru={MAX_SORU.AYT.felsefe} data={ayt.felsefe} handleInputChange={handleInputChange} theme={theme} />
+            <InputRow sinav="AYT" dersAdi="Din Kültürü" dersKey="din" maxSoru={MAX_SORU.AYT.din} data={ayt.din} handleInputChange={handleInputChange} theme={theme} />
+            <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '8px 0' }}></div>
+            <InputRow sinav="AYT" dersAdi="Yabancı Dil (YDT)" dersKey="dil" maxSoru={MAX_SORU.AYT.dil} data={ayt.dil} handleInputChange={handleInputChange} theme={theme} />
+          </div>
+        </div>
+      </div>
+
+      <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '16px', border: theme.cardBorder, display: 'flex', gap: '20px', alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: '30px', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <label style={{ color: theme.textSecondary, fontSize: '14px', fontWeight: '600' }}>🎓 Diploma Notu (50-100)</label>
+          <input
+            type="number"
+            value={diplomaNotu}
+            onChange={(e) => setDiplomaNotu(e.target.value)}
+            min="50"
+            max="100"
+            style={{
+              padding: '12px',
+              borderRadius: '8px',
+              border: `2px solid ${theme.accentMain}`,
+              background: '#334155',
+              color: '#fff',
+              fontSize: '18px',
+              fontWeight: '700',
+              outline: 'none',
+              width: '150px',
+              textAlign: 'center'
+            }}
+          />
+        </div>
+        <button onClick={hesapla} style={{ padding: '14px 40px', background: theme.accentMain, color: '#fff', border: 'none', borderRadius: '8px', fontSize: '18px', fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 15px rgba(249,115,22,0.3)' }}>
+          🚀 Puanları & Sıralamayı Hesapla
+        </button>
+      </div>
+
+      {sonuc && (
+        <div style={{ animation: 'fadeIn 0.5s ease' }}>
+          <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+            <span style={{ background: 'rgba(139,92,246,0.15)', color: '#a78bfa', padding: '8px 16px', borderRadius: '20px', fontSize: '14px', fontWeight: '600', border: '1px solid rgba(139,92,246,0.3)' }}>
+              🎯 OBP Katkısı: <strong>+{sonuc.obp} Puan</strong> (ÖSYM 2026 Verileri)
+            </span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+            
+            {/* TYT KARTI */}
+            <div style={{ background: 'linear-gradient(145deg, #1e293b, #0f172a)', padding: '24px', borderRadius: '16px', border: '2px solid #10b981' }}>
+              <div style={{ color: '#10b981', fontSize: '20px', fontWeight: '800', marginBottom: '16px' }}>📝 TYT (2 Yıllık)</div>
+              
+              {/* Ham Puan & Sıralama */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <span style={{ color: theme.textSecondary, fontSize: '14px' }}>Ham Puan / Sıralama:</span>
+                <span style={{ color: '#fff', fontWeight: '700', fontSize: '14px' }}>{sonuc.tytPuan} (<strong>~{sonuc.tytHamSiralama}</strong>)</span>
+              </div>
+
+              {/* Yerleştirme Puan & Sıralama */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
+                <span style={{ color: '#10b981', fontWeight: '600', fontSize: '15px' }}>Yerleştirme Puanı:</span>
+                <span style={{ color: '#10b981', fontWeight: '800', fontSize: '16px' }}>{sonuc.tytYerlesmePuan}</span>
+              </div>
+              <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '10px 0' }}></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#f59e0b', fontWeight: '700', fontSize: '14px' }}>🏆 Yerleştirme Sıralaması:</span>
+                <span style={{ color: '#f59e0b', fontWeight: '800', fontSize: '18px' }}>~{sonuc.tytYerlesmeSiralama || '-'}</span>
+              </div>
+            </div>
+
+            {/* ALAN KARTLARI */}
+            {[
+              { key: 'SAY', name: '📐 SAYISAL', color: '#06b6d4' },
+              { key: 'EA', name: '⚖️ EŞİT AĞIRLIK', color: '#f59e0b' },
+              { key: 'SOZ', name: '📖 SÖZEL', color: '#ec4899' },
+              { key: 'DIL', name: '🌍 YABANCI DİL', color: '#3b82f6' }
+            ].map(tur => (
+              <div key={tur.key} style={{ background: 'linear-gradient(145deg, #1e293b, #0f172a)', padding: '24px', borderRadius: '16px', border: `2px solid ${tur.color}` }}>
+                <div style={{ color: tur.color, fontSize: '20px', fontWeight: '800', marginBottom: '16px' }}>{tur.name}</div>
+                
+                {/* Ham Puan & Sıralama */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <span style={{ color: theme.textSecondary, fontSize: '14px' }}>Ham Puan / Sıralama:</span>
+                  <span style={{ color: '#fff', fontWeight: '700', fontSize: '14px' }}>{sonuc.alanlar[tur.key].hamPuan} (<strong>~{sonuc.alanlar[tur.key].hamSiralama}</strong>)</span>
+                </div>
+
+                {/* Yerleştirme Puan & Sıralama */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
+                  <span style={{ color: tur.color, fontWeight: '600', fontSize: '15px' }}>Yerleştirme Puanı:</span>
+                  <span style={{ color: tur.color, fontWeight: '800', fontSize: '16px' }}>{sonuc.alanlar[tur.key].yerlesmePuan}</span>
+                </div>
+                <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '10px 0' }}></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: '#f59e0b', fontWeight: '700', fontSize: '14px' }}>🏆 Yerleştirme Sıralaması:</span>
+                  <span style={{ color: '#f59e0b', fontWeight: '800', fontSize: '18px' }}>~{sonuc.alanlar[tur.key].yerlesmeSiralama || '-'}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
