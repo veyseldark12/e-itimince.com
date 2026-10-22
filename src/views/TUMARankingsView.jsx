@@ -1,11 +1,24 @@
 // src/views/TUMARankingsView.jsx
 
 import { useState, useMemo } from 'react';
-import { APP_THEME } from '../constants/theme';
+import {
+  FaTrophy,
+  FaSchool,
+  FaSearch,
+  FaSyncAlt,
+  FaUniversity,
+  FaMedal,
+  FaStar,
+  FaChartLine,
+  FaChartBar,
+  FaTimesCircle,
+  FaFrown,
+  FaLightbulb,
+} from 'react-icons/fa';
+import { PageHeader } from '../components/PageHeader';
 import { uniDatabase } from '../data/uniDatabase';
 
 export function TUMARankingsView() {
-  const theme = APP_THEME;
   const [selectedFaculty, setSelectedFaculty] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('rank');
@@ -42,7 +55,7 @@ export function TUMARankingsView() {
     // Arama filtresi
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      list = list.filter(uni => 
+      list = list.filter(uni =>
         uni.name.toLowerCase().includes(term) ||
         uni.key.toLowerCase().includes(term)
       );
@@ -76,63 +89,48 @@ export function TUMARankingsView() {
 
   // Renk belirle
   const getTUMAColor = (rank) => {
-    if (rank === undefined || rank === null) return theme.textSecondary;
-    if (rank <= 10) return '#10b981';
-    if (rank <= 30) return '#3b82f6';
-    if (rank <= 50) return '#f59e0b';
-    return '#ef4444';
+    if (rank === undefined || rank === null) return 'var(--text-muted)';
+    if (rank <= 10) return 'var(--success)';
+    if (rank <= 30) return 'var(--cyan)';
+    if (rank <= 50) return 'var(--accent)';
+    return 'var(--danger)';
+  };
+
+  // Rozet sınıfı belirle
+  const getTUMATag = (rank) => {
+    if (rank <= 10) return 'tag tag-success';
+    if (rank <= 30) return 'tag tag-cyan';
+    if (rank <= 50) return 'tag tag-warn';
+    return 'tag tag-danger';
   };
 
   const getTUMALabel = (rank) => {
-    if (rank === undefined || rank === null) return '❌ Veri Yok';
-    if (rank <= 10) return '🏅 En İyi 10';
-    if (rank <= 30) return '⭐ İlk 30';
-    if (rank <= 50) return '📈 İlk 50';
-    return '📊 Memnuniyet';
+    if (rank === undefined || rank === null) return 'Veri Yok';
+    if (rank <= 10) return <><FaMedal /> En İyi 10</>;
+    if (rank <= 30) return <><FaStar /> İlk 30</>;
+    if (rank <= 50) return <><FaChartLine /> İlk 50</>;
+    return <><FaChartBar /> Memnuniyet</>;
   };
 
   return (
     <div>
-      <h2 style={{ color: theme.textPrimary, fontSize: '28px', fontWeight: '800', marginBottom: '8px' }}>
-        🏆 TÜMA Memnuniyet Sıralamaları
-      </h2>
-      <p style={{ color: theme.textSecondary, fontSize: '16px', marginBottom: '32px' }}>
-        Türkiye Üniversite Memnuniyet Araştırması (TÜMA) - Öğrenci memnuniyetine göre sıralama.
-      </p>
+      <PageHeader
+        kicker="SIRALAMALAR"
+        icon={FaTrophy}
+        title="TÜMA Memnuniyet Sıralamaları"
+        desc="Türkiye Üniversite Memnuniyet Araştırması (TÜMA) - Öğrenci memnuniyetine göre sıralama."
+      />
 
       {/* Filtreler */}
-      <div style={{
-        display: 'flex',
-        gap: '16px',
-        flexWrap: 'wrap',
-        marginBottom: '24px',
-        background: theme.cardBg,
-        padding: '20px 24px',
-        borderRadius: '16px',
-        border: theme.cardBorder,
-        alignItems: 'center',
-      }}>
+      <div className="toolbar">
         {/* Fakülte Seçimi */}
-        <div style={{ flex: 1, minWidth: '200px' }}>
-          <label style={{ color: theme.textSecondary, fontSize: '12px', display: 'block', marginBottom: '4px' }}>
-            🏫 Fakülte / Alan Seç
-          </label>
+        <div className="field">
+          <label className="field-label"><span className="meta-item"><FaSchool /> Fakülte / Alan Seç</span></label>
           <select
             value={selectedFaculty}
             onChange={(e) => setSelectedFaculty(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '10px 16px',
-              borderRadius: '12px',
-              border: '2px solid rgba(255,255,255,0.1)',
-              background: 'rgba(255,255,255,0.05)',
-              color: theme.textPrimary,
-              fontSize: '14px',
-              outline: 'none',
-              cursor: 'pointer',
-            }}
           >
-            <option value="ALL">📊 Genel Memnuniyet</option>
+            <option value="ALL">Genel Memnuniyet</option>
             {allFaculties.map(faculty => (
               <option key={faculty} value={faculty}>{faculty}</option>
             ))}
@@ -140,187 +138,118 @@ export function TUMARankingsView() {
         </div>
 
         {/* Arama */}
-        <div style={{ flex: 1, minWidth: '200px' }}>
-          <label style={{ color: theme.textSecondary, fontSize: '12px', display: 'block', marginBottom: '4px' }}>
-            🔍 Üniversite Ara
-          </label>
+        <div className="field">
+          <label className="field-label"><span className="meta-item"><FaSearch /> Üniversite Ara</span></label>
           <input
             type="text"
             placeholder="Üniversite adı..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '10px 16px',
-              borderRadius: '12px',
-              border: '2px solid rgba(255,255,255,0.1)',
-              background: 'rgba(255,255,255,0.05)',
-              color: theme.textPrimary,
-              fontSize: '14px',
-              outline: 'none',
-            }}
           />
         </div>
 
         {/* Sıralama */}
-        <div style={{ minWidth: '150px' }}>
-          <label style={{ color: theme.textSecondary, fontSize: '12px', display: 'block', marginBottom: '4px' }}>
-            🔄 Sıralama
-          </label>
+        <div className="field">
+          <label className="field-label"><span className="meta-item"><FaSyncAlt /> Sıralama</span></label>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '10px 16px',
-              borderRadius: '12px',
-              border: '2px solid rgba(255,255,255,0.1)',
-              background: 'rgba(255,255,255,0.05)',
-              color: theme.textPrimary,
-              fontSize: '14px',
-              outline: 'none',
-              cursor: 'pointer',
-            }}
           >
-            <option value="rank">📈 TÜMA'ya Göre</option>
-            <option value="name">🔤 Alfabetik</option>
+            <option value="rank">TÜMA'ya Göre</option>
+            <option value="name">Alfabetik</option>
           </select>
         </div>
 
         {/* Sonuç sayısı */}
-        <div style={{ 
-          padding: '10px 16px',
-          background: 'rgba(255,255,255,0.05)',
-          borderRadius: '12px',
-          textAlign: 'center',
-          minWidth: '100px',
-        }}>
-          <div style={{ color: theme.textSecondary, fontSize: '12px' }}>Sonuç</div>
-          <div style={{ color: theme.textPrimary, fontSize: '18px', fontWeight: '700' }}>
-            {filteredUniversities.length}
-          </div>
+        <div className="field-static">
+          <span className="field-static-label">Sonuç</span>
+          <span className="field-static-value">{filteredUniversities.length}</span>
         </div>
       </div>
 
       {/* Tablo */}
-      <div style={{
-        background: theme.cardBg,
-        borderRadius: '16px',
-        overflow: 'hidden',
-        border: theme.cardBorder,
-      }}>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid rgba(255,255,255,0.1)' }}>
-                <th style={{ padding: '14px 20px', textAlign: 'left', color: theme.textSecondary, width: '50px' }}>
-                  #
-                </th>
-                <th style={{ padding: '14px 20px', textAlign: 'left', color: theme.textSecondary }}>
-                  🏛️ Üniversite
-                </th>
-                <th style={{ padding: '14px 20px', textAlign: 'center', color: theme.textSecondary, width: '120px' }}>
-                  {selectedFaculty === 'ALL' ? '🏆 Genel TÜMA' : `🏫 ${selectedFaculty}`}
-                </th>
-                <th style={{ padding: '14px 20px', textAlign: 'center', color: theme.textSecondary, width: '120px' }}>
-                  🏆 Genel TÜMA
-                </th>
-                <th style={{ padding: '14px 20px', textAlign: 'center', color: theme.textSecondary, width: '100px' }}>
-                  Durum
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredUniversities.length > 0 ? (
-                filteredUniversities.map((uni, index) => {
-                  const facultyRank = selectedFaculty !== 'ALL' 
-                    ? uni.tuma?.[selectedFaculty] 
+      {filteredUniversities.length > 0 ? (
+        <div className="dtable-wrap">
+          <div className="dtable-scroll">
+            <table className="dtable">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th><span className="meta-item"><FaUniversity /> Üniversite</span></th>
+                  {selectedFaculty !== 'ALL' && (
+                    <th className="center">
+                      <span className="meta-item"><FaSchool /> {selectedFaculty}</span>
+                    </th>
+                  )}
+                  <th className="center"><span className="meta-item"><FaTrophy /> Genel TÜMA</span></th>
+                  <th className="center">Durum</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredUniversities.map((uni, index) => {
+                  const facultyRank = selectedFaculty !== 'ALL'
+                    ? uni.tuma?.[selectedFaculty]
                     : uni.tuma?.genel;
                   const hasFacultyRank = facultyRank !== undefined && facultyRank !== null;
 
                   return (
-                    <tr
-                      key={uni.key}
-                      style={{
-                        borderBottom: '1px solid rgba(255,255,255,0.05)',
-                        background: index % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)',
-                        transition: 'all 0.2s',
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                      onMouseLeave={(e) => e.currentTarget.style.background = index % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)'}
-                    >
-                      <td style={{ padding: '14px 20px', color: theme.textSecondary }}>
+                    <tr key={uni.key}>
+                      <td className="text-muted">
                         {index + 1}
                       </td>
-                      <td style={{ padding: '14px 20px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ fontSize: '24px' }}>{uni.icon}</span>
-                          <span style={{ color: theme.textPrimary, fontWeight: '500' }}>
-                            {uni.name}
+                      <td>
+                        <div className="uni-cell">
+                          <span className="uni-cell-icon">
+                            <uni.icon />
                           </span>
+                          <span>{uni.name}</span>
                         </div>
                       </td>
-                      <td style={{ 
-                        padding: '14px 20px', 
-                        textAlign: 'center',
-                        fontWeight: '700',
-                        color: hasFacultyRank ? getTUMAColor(facultyRank) : theme.textSecondary,
-                      }}>
-                        {hasFacultyRank ? `#${facultyRank}` : '-'}
-                      </td>
-                      <td style={{ 
-                        padding: '14px 20px', 
-                        textAlign: 'center',
-                        color: uni.tuma?.genel ? getTUMAColor(uni.tuma.genel) : theme.textSecondary,
-                        fontWeight: uni.tuma?.genel ? '600' : '400',
-                      }}>
+                      {selectedFaculty !== 'ALL' && (
+                        <td
+                          className={`center ${hasFacultyRank ? 'td-strong' : 'text-muted'}`}
+                          style={hasFacultyRank ? { color: getTUMAColor(facultyRank) } : undefined}
+                        >
+                          {hasFacultyRank ? `#${facultyRank}` : '-'}
+                        </td>
+                      )}
+                      <td
+                        className={`center ${uni.tuma?.genel ? 'td-strong' : 'text-muted'}`}
+                        style={uni.tuma?.genel ? { color: getTUMAColor(uni.tuma.genel) } : undefined}
+                      >
                         {uni.tuma?.genel ? `#${uni.tuma.genel}` : '-'}
                       </td>
-                      <td style={{ padding: '14px 20px', textAlign: 'center' }}>
+                      <td className="center">
                         {hasFacultyRank ? (
-                          <span style={{
-                            padding: '4px 12px',
-                            borderRadius: '20px',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            background: getTUMAColor(facultyRank) + '20',
-                            color: getTUMAColor(facultyRank),
-                          }}>
+                          <span className={getTUMATag(facultyRank)}>
                             {getTUMALabel(facultyRank)}
                           </span>
                         ) : (
-                          <span style={{ color: theme.textSecondary, fontSize: '12px' }}>❌ Veri Yok</span>
+                          <span className="text-muted text-sm meta-item"><FaTimesCircle /> Veri Yok</span>
                         )}
                       </td>
                     </tr>
                   );
-                })
-              ) : (
-                <tr>
-                  <td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: theme.textSecondary }}>
-                    😕 Bu kritere uygun üniversite bulunamadı.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="empty-state">
+          <div className="empty-icon"><FaFrown /></div>
+          <h3 className="empty-title">Bu kritere uygun üniversite bulunamadı.</h3>
+        </div>
+      )}
 
       {/* Dipnot */}
-      <div style={{
-        marginTop: '16px',
-        padding: '12px 20px',
-        background: 'rgba(255,255,255,0.03)',
-        borderRadius: '12px',
-        border: '1px solid rgba(255,255,255,0.05)',
-        color: theme.textSecondary,
-        fontSize: '13px',
-      }}>
-        💡 <strong>İpucu:</strong> Bir fakülte/alan seçerek o alandaki memnuniyet sıralamasını görebilir, üniversite arayarak filtreleyebilirsiniz.
-        {selectedFaculty !== 'ALL' && (
-          <span> • <strong>{facultyCount}</strong> üniversite bu alanda sıralamaya sahip.</span>
-        )}
+      <div className="note">
+        <span>
+          <span className="meta-item"><FaLightbulb /> <strong>İpucu:</strong></span> Bir fakülte/alan seçerek o alandaki memnuniyet sıralamasını görebilir, üniversite arayarak filtreleyebilirsiniz.
+          {selectedFaculty !== 'ALL' && (
+            <span> • <strong>{facultyCount}</strong> üniversite bu alanda sıralamaya sahip.</span>
+          )}
+        </span>
       </div>
     </div>
   );

@@ -1,16 +1,14 @@
 // src/components/Navbar.jsx
 
 import { useState, useEffect, useRef } from 'react';
-import { APP_THEME } from '../constants/theme';
 import { supabase } from '../lib/supabaseClient';
 import {
   FaHome,
   FaUniversity,
   FaFlask,
-  FaClipboardList,
+  FaListAlt,
   FaChartBar,
   FaCalculator,
-  FaListAlt,
   FaStar,
   FaBars,
   FaTimes,
@@ -18,9 +16,12 @@ import {
   FaUserGraduate,
   FaSignOutAlt,
   FaUsers,
-  FaGlobe,        // QS için
-  FaTrophy,       // TÜMA için
-  FaBriefcase,    // İstihdam için
+  FaChalkboardTeacher,
+  FaGlobe,
+  FaTrophy,
+  FaBriefcase,
+  FaBullseye,
+  FaBrain,
 } from 'react-icons/fa';
 
 export function Navbar({
@@ -33,20 +34,37 @@ export function Navbar({
   userClassId,
   onLogout,
 }) {
-  const theme = APP_THEME;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mobileOpenDropdown, setMobileOpenDropdown] = useState(null);
+  const [desktopDropdown, setDesktopDropdown] = useState(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [role, setRole] = useState('student');
   const [loading, setLoading] = useState(false);
-  
+
   const [className, setClassName] = useState('');
-  const [classStudents, setClassStudents] = useState([]);
-  const mobileMenuRef = useRef(null);
+  const navRef = useRef(null);
+  const closeTimer = useRef(null);
+
+  // Fareyle üzerine gelince menüyü aç; menüye geçişteki küçük boşluklar
+  // yüzünden kapanmasın diye kapatma işlemi kısa bir gecikmeyle yapılır.
+  const openDropdown = (key) => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    setDesktopDropdown(key);
+  };
+
+  const scheduleCloseDropdown = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setDesktopDropdown(null), 180);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchClassInfo = async () => {
@@ -56,75 +74,62 @@ export function Navbar({
           .select('name')
           .eq('id', userClassId)
           .single();
-          
-        if (classData) {
-          setClassName(classData.name);
-        }
 
-        const { data: studentsData } = await supabase
-          .from('profiles')
-          .select('name')
-          .eq('class_id', userClassId)
-          .eq('role', 'student');
-
-        if (studentsData) {
-          setClassStudents(studentsData); 
-        }
+        if (classData) setClassName(classData.name);
       }
     };
     fetchClassInfo();
   }, [userRole, userClassId]);
 
-  const handleTeacherPanelClick = () => {
-    if (userRole === 'teacher') {
-      setActiveTab('teacher-panel');
-    } else {
-      alert('⚠️ Bu alana sadece öğretmenler erişebilir.');
-    }
-    setIsMobileMenuOpen(false);
-    setMobileOpenDropdown(null);
-  };
-
+  // Menü ve açılır kutular dışına tıklanınca kapat
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
+      if (navRef.current && !navRef.current.contains(event.target)) {
         setIsMobileMenuOpen(false);
         setMobileOpenDropdown(null);
+        setDesktopDropdown(null);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    const handleClickOutsideModal = (event) => {
-      if (showLoginModal && event.target.closest('.login-modal') === null) {
-        setShowLoginModal(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutsideModal);
-    return () => document.removeEventListener('mousedown', handleClickOutsideModal);
-  }, [showLoginModal]);
+  const closeAll = () => {
+    setIsMobileMenuOpen(false);
+    setMobileOpenDropdown(null);
+    setDesktopDropdown(null);
+  };
+
+  const handleTeacherPanelClick = () => {
+    if (userRole === 'teacher') {
+      setActiveTab('teacher-panel');
+    } else {
+      alert('Bu alana sadece öğretmenler erişebilir.');
+    }
+    closeAll();
+  };
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
       if (isRegister) {
+        // Rol her zaman 'student' olarak atanır; öğretmen rolü kullanıcı tarafından
+        // seçilemez, yönetici tarafından veritabanından atanmalıdır.
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            data: { name, role },
+            data: { name, role: 'student' },
           },
         });
         if (error) throw error;
         if (data.user) {
           const { error: profileError } = await supabase
             .from('profiles')
-            .upsert([{ id: data.user.id, name, role, email }]);
+            .upsert([{ id: data.user.id, name, role: 'student', email }]);
           if (profileError) throw profileError;
-          alert('✅ Kayıt başarılı! Lütfen e-postanızı kontrol edin veya giriş yapın.');
+          alert('Kayıt başarılı! Lütfen e-postanızı kontrol edin veya giriş yapın.');
           setIsRegister(false);
           setEmail('');
           setPassword('');
@@ -156,7 +161,7 @@ export function Navbar({
         }
       }
     } catch (error) {
-      alert('❌ Hata: ' + error.message);
+      alert('Hata: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -165,63 +170,50 @@ export function Navbar({
   const menuConfig = [
     { id: 'anasayfa', label: 'Ana Sayfa', icon: FaHome },
     { id: 'universiteler', label: 'Üniversiteler', icon: FaUniversity },
-    { id: 'student-profile', label: 'Profilim & Hedeflerim', icon: FaUserGraduate },
-    // YENİ: QS, TÜMA, İstihdam
-    { id: 'qs-rankings', label: '🌍 QS Sıralamaları', icon: FaGlobe },
-    { id: 'tuma-rankings', label: '🏆 TÜMA Memnuniyet', icon: FaTrophy },
-    { id: 'employment', label: '💼 İstihdam Analizi', icon: FaBriefcase },
+    {
+      label: 'Sıralamalar',
+      icon: FaTrophy,
+      isDropdown: true,
+      subItems: [
+        { id: 'qs-rankings', label: 'QS Dünya Sıralaması', icon: FaGlobe },
+        { id: 'tuma-rankings', label: 'TÜMA Memnuniyet', icon: FaTrophy },
+        { id: 'employment', label: 'İstihdam Analizi', icon: FaBriefcase },
+      ],
+    },
     {
       label: 'Testler',
       icon: FaFlask,
       isDropdown: true,
       subItems: [
-        { id: 'test', label: 'Üniversite Uyum Testi', icon: '🎯' },
-        { id: 'holland-test', label: 'Holland Mesleki Tercih Testi', icon: '🧠' },
+        { id: 'test', label: 'Üniversite Uyum Testi', icon: FaBullseye },
+        { id: 'holland-test', label: 'Holland Mesleki Tercih Testi', icon: FaBrain },
       ],
     },
     {
-      label: 'Listelerim',
-      icon: FaClipboardList,
+      label: 'Araçlar',
+      icon: FaCalculator,
       isDropdown: true,
       subItems: [
-        { id: 'karsilastir', label: `Kıyas Listesi (${compareCount})`, icon: FaListAlt },
-        { id: 'tercihlerim', label: `Tercih Listesi (${favoritesCount})`, icon: FaStar },
+        { id: 'puan-hesapla', label: 'Puan Hesapla', icon: FaCalculator },
+        { id: 'simulasyon', label: 'Sıralama Simülasyonu', icon: FaChartBar },
       ],
     },
-    { id: 'puan-hesapla', label: 'Puan Hesapla', icon: FaCalculator },
-    { id: 'simulasyon', label: 'Sıralama Simülasyonu', icon: FaChartBar },
-    { 
-      id: 'teacher-panel', 
-      label: '👨‍🏫 Öğretmen Paneli', 
-      icon: FaUserGraduate,
-      action: handleTeacherPanelClick,
-    },
-    ...(user
-      ? [
-          {
-            label: user.name || user.email?.split('@')[0] || 'Kullanıcı',
-            icon: FaUserGraduate,
-            isDropdown: true,
-            subItems: [
-              ...(userRole === 'student' && userClassId ? [
-                { 
-                  id: 'my-class', 
-                  label: `📚 Sınıfım: ${className || 'Yükleniyor...'}`, 
-                  icon: FaUsers,
-                  action: () => setActiveTab('my-class'),
-                }
-              ] : []),
-              { divider: true },
-              { id: 'logout', label: 'Çıkış Yap', icon: FaSignOutAlt }
-            ]
-          }
-        ]
-      : [{ id: 'login', label: 'Giriş Yap', icon: FaSignInAlt, action: () => setShowLoginModal(true) }]),
+    { id: 'karsilastir', label: 'Kıyas', icon: FaListAlt, badge: compareCount },
+    { id: 'tercihlerim', label: 'Tercihlerim', icon: FaStar, badge: favoritesCount },
   ];
 
-  const toggleMobileDropdown = (key) => {
-    setMobileOpenDropdown(mobileOpenDropdown === key ? null : key);
-  };
+  const userItems = user
+    ? [
+        { id: 'student-profile', label: 'Profilim & Hedeflerim', icon: FaUserGraduate },
+        ...(userRole === 'student' && userClassId
+          ? [{ id: 'my-class', label: `Sınıfım: ${className || 'Yükleniyor...'}`, icon: FaUsers }]
+          : []),
+        { divider: true },
+        { id: 'logout', label: 'Çıkış Yap', icon: FaSignOutAlt },
+      ]
+    : [];
+
+  const isGroupActive = (item) => item.subItems?.some((s) => s.id === activeTab);
 
   const handleMenuItemClick = (item) => {
     if (item.action) {
@@ -234,257 +226,242 @@ export function Navbar({
         setActiveTab(item.id);
       }
     }
-    setIsMobileMenuOpen(false);
-    setMobileOpenDropdown(null);
+    closeAll();
   };
+
+  const renderIcon = (Icon) => (Icon ? <Icon style={{ fontSize: '16px' }} /> : null);
 
   return (
     <>
-      <nav
-        style={{
-          background: theme.navBg,
-          padding: '0 24px',
-          height: '76px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          borderBottom: '1px solid rgba(0,0,0,0.06)',
-          position: 'sticky',
-          top: 0,
-          zIndex: 1000,
-          backdropFilter: 'blur(24px)',
-          transition: 'all 0.3s ease',
-        }}
-      >
-        <div
-          onClick={() => setActiveTab('anasayfa')}
-          style={{ display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer' }}
-        >
-          <img src="/logo.png" alt="eğitimince.com" style={{ height: '44px', width: 'auto', objectFit: 'contain' }} />
-          <span style={{ color: theme.textPrimary, fontSize: '22px', fontWeight: '900', letterSpacing: '-0.5px' }}>
-            eğitimince<span style={{ color: theme.accentMain }}>.com</span>
+      <nav className="nav" ref={navRef}>
+        <button className="nav-brand" onClick={() => setActiveTab('anasayfa')}>
+          <img src="/Logo.png" alt="eğitimince.com" />
+          <span className="nav-brand-name">
+            eğitimince<span className="text-accent">.com</span>
           </span>
-        </div>
-
-        <button
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: theme.textPrimary,
-            fontSize: '34px',
-            cursor: 'pointer',
-            padding: '8px 12px',
-            borderRadius: '12px',
-            transition: 'all 0.3s',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(0,0,0,0.04)')}
-          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-        >
-          {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
         </button>
 
-        {isMobileMenuOpen && (
-          <div
-            ref={mobileMenuRef}
-            style={{
-              position: 'absolute',
-              top: '76px',
-              left: 0,
-              right: 0,
-              background: 'rgba(255,255,255,0.98)',
-              backdropFilter: 'blur(24px)',
-              borderBottom: '1px solid rgba(0,0,0,0.06)',
-              padding: '20px 24px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px',
-              zIndex: 999,
-              boxShadow: '0 20px 60px rgba(0,0,0,0.1)',
-              maxHeight: 'calc(100vh - 76px)',
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              scrollbarWidth: 'thin',
-              scrollbarColor: `${theme.accentMain} rgba(0,0,0,0.05)`,
+        {/* Masaüstü menüsü */}
+        <div className="nav-menu">
+          {menuConfig.map((item) => {
+            if (item.isDropdown) {
+              const open = desktopDropdown === item.label;
+              return (
+                <div
+                  key={item.label}
+                  className="nav-item"
+                  onMouseEnter={() => openDropdown(item.label)}
+                  onMouseLeave={scheduleCloseDropdown}
+                >
+                  <button
+                    className={`nav-link ${isGroupActive(item) ? 'active' : ''}`}
+                    onClick={() => openDropdown(item.label)}
+                  >
+                    {renderIcon(item.icon)}
+                    {item.label}
+                    <span className={`nav-caret ${open ? 'open' : ''}`}>▾</span>
+                  </button>
+
+                  {open && (
+                    <div className="nav-dropdown">
+                      {item.subItems.map((sub) => (
+                        <button
+                          key={sub.id}
+                          className={`nav-dropdown-item ${activeTab === sub.id ? 'active' : ''}`}
+                          onClick={() => handleMenuItemClick(sub)}
+                        >
+                          {renderIcon(sub.icon)}
+                          {sub.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            return (
+              <button
+                key={item.id}
+                className={`nav-link ${activeTab === item.id ? 'active' : ''}`}
+                onClick={() => handleMenuItemClick(item)}
+              >
+                {renderIcon(item.icon)}
+                {item.label}
+                {item.badge > 0 && <span className="nav-badge">{item.badge}</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="nav-right">
+          <button
+            className="nav-link hide-mobile"
+            onClick={handleTeacherPanelClick}
+            title="Öğretmen Paneli"
+          >
+            <FaChalkboardTeacher style={{ fontSize: '16px' }} />
+            Öğretmen
+          </button>
+
+          {user ? (
+            <div
+              className="nav-item"
+              onMouseEnter={() => openDropdown('__user__')}
+              onMouseLeave={scheduleCloseDropdown}
+            >
+              <button
+                className={`nav-link ${desktopDropdown === '__user__' ? 'active' : ''}`}
+                onClick={() => openDropdown('__user__')}
+              >
+                <FaUserGraduate style={{ fontSize: '16px' }} />
+                <span className="hide-mobile" style={{ maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {(user.name || user.email?.split('@')[0] || 'Kullanıcı').split(' ')[0]}
+                </span>
+                <span className={`nav-caret ${desktopDropdown === '__user__' ? 'open' : ''}`}>▾</span>
+              </button>
+
+              {desktopDropdown === '__user__' && (
+                <div className="nav-dropdown right">
+                  {userItems.map((item, idx) =>
+                    item.divider ? (
+                      <hr key={`d-${idx}`} className="nav-divider" />
+                    ) : (
+                      <button
+                        key={item.id}
+                        className={`nav-dropdown-item ${activeTab === item.id ? 'active' : ''}`}
+                        onClick={() => handleMenuItemClick(item)}
+                      >
+                        {renderIcon(item.icon)}
+                        {item.label}
+                      </button>
+                    )
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <button className="btn btn-primary btn-sm" onClick={() => setShowLoginModal(true)}>
+              <FaSignInAlt /> <span className="hide-mobile">Giriş Yap</span>
+            </button>
+          )}
+
+          <button
+            className="nav-burger"
+            aria-label="Menü"
+            onClick={() => {
+              setIsMobileMenuOpen(!isMobileMenuOpen);
+              setDesktopDropdown(null);
             }}
           >
-            <style>
-              {`
-                .mobile-menu-scroll::-webkit-scrollbar { width: 5px; }
-                .mobile-menu-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.03); border-radius: 10px; }
-                .mobile-menu-scroll::-webkit-scrollbar-thumb { background: ${theme.accentMain}; border-radius: 10px; }
-              `}
-            </style>
-            <div className="mobile-menu-scroll" style={{ width: '100%' }}>
-              {menuConfig.map((item, idx) => {
-                const Icon = item.icon;
-                if (item.isDropdown) {
-                  const isOpen = mobileOpenDropdown === item.label;
-                  return (
-                    <div key={idx} style={{ marginBottom: '4px' }}>
-                      <button
-                        onClick={() => toggleMobileDropdown(item.label)}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: theme.textPrimary,
-                          fontWeight: '600',
-                          fontSize: '16px',
-                          padding: '14px 20px',
-                          borderRadius: '14px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          width: '100%',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s',
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(0,0,0,0.03)')}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                      >
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <Icon style={{ fontSize: '20px' }} />
-                          {item.label}
-                        </span>
-                        <span style={{ fontSize: '18px', transition: 'transform 0.3s', transform: isOpen ? 'rotate(180deg)' : 'none' }}>
-                          ▾
-                        </span>
-                      </button>
-                      {isOpen && (
-                        <div style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          {item.subItems.map((sub) => {
-                            const SubIcon = sub.icon;
-                            if (sub.divider) {
-                              return <hr key="divider" style={{ border: 'none', borderTop: '1px solid rgba(0,0,0,0.06)', margin: '8px 0' }} />;
-                            }
-                            return (
-                              <button
-                                key={sub.id}
-                                onClick={() => handleMenuItemClick(sub)}
-                                style={{
-                                  background: activeTab === sub.id ? `rgba(249,115,22,0.08)` : 'transparent',
-                                  border: activeTab === sub.id ? `2px solid ${theme.accentMain}` : '2px solid transparent',
-                                  color: activeTab === sub.id ? theme.accentMain : theme.textPrimary,
-                                  fontWeight: activeTab === sub.id ? '700' : '500',
-                                  cursor: 'pointer',
-                                  fontSize: '15px',
-                                  padding: '12px 16px',
-                                  borderRadius: '12px',
-                                  transition: 'all 0.2s',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '12px',
-                                  width: '100%',
-                                  textAlign: 'left',
-                                }}
-                                onMouseEnter={(e) => {
-                                  if (activeTab !== sub.id) e.currentTarget.style.background = 'rgba(0,0,0,0.03)';
-                                }}
-                                onMouseLeave={(e) => {
-                                  if (activeTab !== sub.id) e.currentTarget.style.background = 'transparent';
-                                }}
-                              >
-                                {typeof SubIcon === 'string' ? (
-                                  <span style={{ fontSize: '18px' }}>{SubIcon}</span>
-                                ) : (
-                                  <SubIcon style={{ fontSize: '18px' }} />
-                                )}
-                                {sub.label}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                }
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => handleMenuItemClick(item)}
-                    style={{
-                      background: activeTab === item.id ? `rgba(249,115,22,0.08)` : 'transparent',
-                      border: activeTab === item.id ? `2px solid ${theme.accentMain}` : '2px solid transparent',
-                      color: activeTab === item.id ? theme.accentMain : theme.textPrimary,
-                      fontWeight: activeTab === item.id ? '700' : '500',
-                      cursor: 'pointer',
-                      fontSize: '16px',
-                      padding: '14px 20px',
-                      borderRadius: '14px',
-                      transition: 'all 0.2s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '14px',
-                      width: '100%',
-                      textAlign: 'left',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (activeTab !== item.id) e.currentTarget.style.background = 'rgba(0,0,0,0.03)';
-                    }}
-                    onMouseLeave={(e) => {
-                      if (activeTab !== item.id) e.currentTarget.style.background = 'transparent';
-                    }}
-                  >
-                    <Icon style={{ fontSize: '22px' }} />
-                    {item.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+            {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
+          </button>
+        </div>
       </nav>
 
-     {showLoginModal && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0,0,0,0.6)',
-            backdropFilter: 'blur(8px)',
-            zIndex: 2000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <div
-            className="login-modal"
-            style={{
-              background: theme.cardBg,
-              padding: '40px',
-              borderRadius: '24px',
-              maxWidth: '420px',
-              width: '100%',
-              border: theme.cardBorder,
-              boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
-            }}
-          >
-            <h2 style={{ color: theme.textPrimary, textAlign: 'center', marginBottom: '24px' }}>
+      {/* Mobil menü */}
+      {isMobileMenuOpen && (
+        <div className="nav-mobile-panel">
+          {menuConfig.map((item) => {
+            if (item.isDropdown) {
+              const open = mobileOpenDropdown === item.label;
+              return (
+                <div key={item.label}>
+                  <button
+                    className={`nav-mobile-link ${isGroupActive(item) ? 'active' : ''}`}
+                    onClick={() => setMobileOpenDropdown(open ? null : item.label)}
+                  >
+                    {renderIcon(item.icon)}
+                    <span style={{ flex: 1 }}>{item.label}</span>
+                    <span className={`nav-caret ${open ? 'open' : ''}`}>▾</span>
+                  </button>
+
+                  {open && (
+                    <div className="nav-mobile-sub">
+                      {item.subItems.map((sub) => (
+                        <button
+                          key={sub.id}
+                          className={`nav-mobile-link ${activeTab === sub.id ? 'active' : ''}`}
+                          style={{ fontSize: '15px', padding: '11px 14px' }}
+                          onClick={() => handleMenuItemClick(sub)}
+                        >
+                          {renderIcon(sub.icon)}
+                          {sub.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            return (
+              <button
+                key={item.id}
+                className={`nav-mobile-link ${activeTab === item.id ? 'active' : ''}`}
+                onClick={() => handleMenuItemClick(item)}
+              >
+                {renderIcon(item.icon)}
+                <span style={{ flex: 1 }}>{item.label}</span>
+                {item.badge > 0 && <span className="nav-badge">{item.badge}</span>}
+              </button>
+            );
+          })}
+
+          <hr className="nav-divider" />
+
+          <button className="nav-mobile-link" onClick={handleTeacherPanelClick}>
+            <FaChalkboardTeacher style={{ fontSize: '18px' }} />
+            Öğretmen Paneli
+          </button>
+
+          {user ? (
+            userItems.map((item, idx) =>
+              item.divider ? (
+                <hr key={`d-${idx}`} className="nav-divider" />
+              ) : (
+                <button
+                  key={item.id}
+                  className={`nav-mobile-link ${activeTab === item.id ? 'active' : ''}`}
+                  onClick={() => handleMenuItemClick(item)}
+                >
+                  {renderIcon(item.icon)}
+                  {item.label}
+                </button>
+              )
+            )
+          ) : (
+            <button
+              className="btn btn-primary"
+              style={{ marginTop: '8px' }}
+              onClick={() => {
+                setShowLoginModal(true);
+                closeAll();
+              }}
+            >
+              <FaSignInAlt /> Giriş Yap
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Giriş / Kayıt modalı */}
+      {showLoginModal && (
+        <div className="modal-overlay" onClick={() => setShowLoginModal(false)}>
+          <div className="modal-card login-modal" onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ textAlign: 'center', marginBottom: '22px' }}>
               {isRegister ? 'Kayıt Ol' : 'Giriş Yap'}
             </h2>
-            <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+            <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               {isRegister && (
-                <>
-                  <input
-                    type="text"
-                    placeholder="Ad Soyad"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    style={inputStyle}
-                  />
-                  <select value={role} onChange={(e) => setRole(e.target.value)} style={inputStyle}>
-                    <option value="student">Öğrenci</option>
-                    <option value="teacher">Öğretmen</option>
-                  </select>
-                </>
+                <input
+                  type="text"
+                  placeholder="Ad Soyad"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
               )}
               <input
                 type="email"
@@ -492,7 +469,6 @@ export function Navbar({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                style={inputStyle}
               />
               <input
                 type="password"
@@ -500,38 +476,21 @@ export function Navbar({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                style={inputStyle}
               />
-              <button type="submit" style={{ ...buttonStyle, opacity: loading ? 0.7 : 1 }} disabled={loading}>
+              <button type="submit" className="btn btn-primary" disabled={loading} style={{ opacity: loading ? 0.7 : 1 }}>
                 {loading ? 'İşleniyor...' : isRegister ? 'Kayıt Ol' : 'Giriş Yap'}
               </button>
             </form>
 
-            <div style={{ marginTop: '20px', textAlign: 'center' }}>
-              <p style={{ color: theme.textSecondary, fontSize: '14px', marginBottom: '8px' }}>
+            <div style={{ marginTop: '18px', textAlign: 'center' }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '8px' }}>
                 {isRegister ? 'Zaten bir hesabın var mı?' : 'Henüz hesabın yok mu?'}
               </p>
               <button
                 type="button"
+                className="btn btn-outline"
+                style={{ width: '100%' }}
                 onClick={() => setIsRegister(!isRegister)}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  borderRadius: '12px',
-                  border: `1px solid ${theme.accentMain}`,
-                  background: 'transparent',
-                  color: theme.accentMain,
-                  fontSize: '15px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = `rgba(249,115,22,0.1)`;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                }}
               >
                 {isRegister ? 'Giriş Yap Ekranına Dön' : 'Kayıt Olmaya Geç'}
               </button>
@@ -539,16 +498,8 @@ export function Navbar({
 
             <button
               onClick={() => setShowLoginModal(false)}
-              style={{
-                marginTop: '16px',
-                background: 'transparent',
-                border: 'none',
-                color: theme.textSecondary,
-                cursor: 'pointer',
-                width: '100%',
-                textAlign: 'center',
-                fontSize: '14px',
-              }}
+              className="btn btn-ghost"
+              style={{ marginTop: '10px', width: '100%', fontSize: '14px' }}
             >
               Kapat
             </button>
@@ -558,24 +509,3 @@ export function Navbar({
     </>
   );
 }
-
-const inputStyle = {
-  padding: '12px 16px',
-  borderRadius: '12px',
-  border: '1px solid rgba(255,255,255,0.15)',
-  background: 'rgba(255,255,255,0.05)',
-  color: '#fff',
-  fontSize: '16px',
-  outline: 'none',
-};
-
-const buttonStyle = {
-  padding: '14px',
-  borderRadius: '12px',
-  border: 'none',
-  background: '#f97316',
-  color: '#fff',
-  fontSize: '18px',
-  fontWeight: '700',
-  cursor: 'pointer',
-};

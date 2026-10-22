@@ -1,8 +1,24 @@
 // src/views/HollandTestView.jsx
 
 import { useState, useEffect } from 'react';
-import { APP_THEME } from '../constants/theme';
+import {
+  FaWrench,
+  FaFlask,
+  FaPalette,
+  FaHandshake,
+  FaBriefcase,
+  FaClipboardList,
+  FaBullseye,
+  FaAward,
+  FaRedo,
+  FaClock,
+  FaTimesCircle,
+  FaQuestionCircle,
+  FaCheckCircle,
+  FaCheckDouble,
+} from 'react-icons/fa';
 import { supabase } from '../lib/supabaseClient';
+import { PageHeader } from '../components/PageHeader';
 
 const QUESTIONS = [
   { id: 1, text: 'Aletlerle çalışmak ve onarmak hoşuma gider.', type: 'R' },
@@ -47,16 +63,15 @@ const CAREER_SUGGESTIONS = {
 };
 
 const TYPE_LABELS = {
-  R: { name: 'Gerçekçi', color: '#ef4444', icon: '🔧' },
-  I: { name: 'Araştırmacı', color: '#3b82f6', icon: '🔬' },
-  A: { name: 'Sanatsal', color: '#8b5cf6', icon: '🎨' },
-  S: { name: 'Sosyal', color: '#10b981', icon: '🤝' },
-  E: { name: 'Girişimci', color: '#f59e0b', icon: '💼' },
-  C: { name: 'Geleneksel', color: '#6b7280', icon: '📋' },
+  R: { name: 'Gerçekçi', color: '#ef4444', icon: FaWrench },
+  I: { name: 'Araştırmacı', color: '#3b82f6', icon: FaFlask },
+  A: { name: 'Sanatsal', color: '#8b5cf6', icon: FaPalette },
+  S: { name: 'Sosyal', color: '#10b981', icon: FaHandshake },
+  E: { name: 'Girişimci', color: '#f59e0b', icon: FaBriefcase },
+  C: { name: 'Geleneksel', color: '#6b7280', icon: FaClipboardList },
 };
 
 export function HollandTestView() {
-  const theme = APP_THEME;
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
   const [result, setResult] = useState(null);
@@ -69,7 +84,7 @@ export function HollandTestView() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) { setLoading(false); return; }
 
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from('student_data')
           .select('holland_result')
           .eq('student_id', user.id)
@@ -126,7 +141,7 @@ export function HollandTestView() {
           }, { onConflict: 'student_id' });
       }
     } catch (error) {
-      console.error('❌ Kayıt hatası:', error);
+      console.error('Kayıt hatası:', error);
     } finally {
       setResult(resultData);
       setCalculating(false);
@@ -141,8 +156,10 @@ export function HollandTestView() {
 
   if (loading || calculating) {
     return (
-      <div style={{ color: theme.textSecondary, textAlign: 'center', padding: '60px', fontSize: '18px' }}>
-        {calculating ? '🎯 Sonuçlar hesaplanıyor ve kaydediliyor...' : 'Yükleniyor...'}
+      <div className="empty-state">
+        <div className="empty-title">
+          {calculating ? 'Sonuçlar hesaplanıyor ve kaydediliyor...' : 'Yükleniyor...'}
+        </div>
       </div>
     );
   }
@@ -152,62 +169,71 @@ export function HollandTestView() {
     const sortedScores = Object.entries(scores).sort((a, b) => b[1] - a[1]);
 
     return (
-      <div>
-        <h2 style={{ color: theme.accentMain, fontSize: '28px', marginBottom: '8px' }}>
-          🎯 Holland Testi Sonucu
-        </h2>
-        <p style={{ color: theme.textSecondary, marginBottom: '30px' }}>
-          Mesleki ilgi alanların ve sana uygun meslekler.
-        </p>
+      <div className="animate-up">
+        <PageHeader
+          icon={FaBullseye}
+          kicker="Holland Testi"
+          title="Holland Testi Sonucu"
+          desc="Mesleki ilgi alanların ve sana uygun meslekler."
+        />
 
-        <div style={{ background: theme.cardBg, padding: '32px', borderRadius: '20px', border: theme.cardBorder, marginBottom: '30px' }}>
-          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-            <span style={{ fontSize: '48px' }}>🎉</span>
-            <h3 style={{ color: theme.textPrimary, fontSize: '22px', marginTop: '8px' }}>
-              En baskın kişilik tipin: <span style={{ color: TYPE_LABELS[top3[0]]?.color || '#fff' }}>{top3[0]}</span>
-            </h3>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '12px', flexWrap: 'wrap' }}>
-              {top3.map((type) => (
-                <span key={type} style={{ background: `${TYPE_LABELS[type]?.color}20`, color: TYPE_LABELS[type]?.color, padding: '6px 16px', borderRadius: '20px', fontWeight: '700', fontSize: '14px' }}>
-                  {TYPE_LABELS[type]?.icon} {TYPE_LABELS[type]?.name}
-                </span>
-              ))}
-            </div>
+        <div className="panel panel-lg mb-24">
+          <div className="empty-icon">
+            <FaAward />
+          </div>
+          <h3 className="block-title">
+            En baskın kişilik tipin:{' '}
+            <span style={{ color: TYPE_LABELS[top3[0]]?.color || 'var(--text)' }}>{top3[0]}</span>
+          </h3>
+
+          <div className="grid-auto grid-2 mb-24">
+            {top3.map((type) => {
+              const Icon = TYPE_LABELS[type]?.icon;
+              return (
+                <div key={type} className="stat-tile">
+                  <div className="stat-label">
+                    {Icon && <Icon />} {TYPE_LABELS[type]?.name}
+                  </div>
+                  <div className="stat-value" style={{ color: TYPE_LABELS[type]?.color }}>{type}</div>
+                </div>
+              );
+            })}
           </div>
 
-          <div style={{ marginBottom: '24px' }}>
-            <h4 style={{ color: theme.textPrimary, fontSize: '16px', marginBottom: '12px' }}>Puanların</h4>
+          <h4 className="block-title">Puanların</h4>
+          <div className="grid-auto mb-24">
             {sortedScores.map(([type, score]) => {
               const maxScore = 25; // 5 soru * 5 puan
               const pct = Math.min((score / maxScore) * 100, 100);
+              const Icon = TYPE_LABELS[type]?.icon;
               return (
-                <div key={type} style={{ marginBottom: '8px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: theme.textSecondary }}>
-                    <span>{TYPE_LABELS[type]?.icon} {TYPE_LABELS[type]?.name}</span>
+                <div key={type}>
+                  <div className="flex-between text-sm text-muted">
+                    <span>
+                      {Icon && <Icon />} {TYPE_LABELS[type]?.name}
+                    </span>
                     <span>{score} Puan</span>
                   </div>
-                  <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.08)', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div style={{ width: `${pct}%`, height: '100%', background: TYPE_LABELS[type]?.color, borderRadius: '4px', transition: 'width 0.5s ease' }} />
+                  <div className="progress mt-8">
+                    <span style={{ width: `${pct}%`, background: TYPE_LABELS[type]?.color }} />
                   </div>
                 </div>
               );
             })}
           </div>
 
-          <div>
-            <h4 style={{ color: theme.textPrimary, fontSize: '16px', marginBottom: '12px' }}>💼 Önerilen Meslekler</h4>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {careers.map((job, i) => (
-                <span key={i} style={{ background: 'rgba(255,255,255,0.06)', padding: '6px 14px', borderRadius: '16px', fontSize: '13px', color: theme.textSecondary }}>
-                  {job}
-                </span>
-              ))}
-            </div>
+          <h4 className="block-title">
+            <FaBriefcase /> Önerilen Meslekler
+          </h4>
+          <div className="flex-wrap">
+            {careers.map((job, i) => (
+              <span key={i} className="tag">{job}</span>
+            ))}
           </div>
         </div>
 
-        <button onClick={resetTest} style={{ padding: '14px 40px', background: theme.accentMain, color: '#fff', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '700', cursor: 'pointer' }}>
-          🔄 Testi Tekrar Çöz
+        <button className="btn btn-primary" onClick={resetTest}>
+          <FaRedo /> Testi Tekrar Çöz
         </button>
       </div>
     );
@@ -217,55 +243,64 @@ export function HollandTestView() {
   const progress = (currentQuestion / QUESTIONS.length) * 100;
 
   return (
-    <div>
-      <h2 style={{ color: theme.accentMain, fontSize: '28px', marginBottom: '8px' }}>🎯 Holland Kariyer Testi</h2>
-      <p style={{ color: theme.textSecondary, marginBottom: '30px' }}>
-        Aşağıdaki ifadelere ne kadar katıldığını 1'den 5'e kadar puanla.
-        <br />
-        <span style={{ fontSize: '13px' }}>⏳ {QUESTIONS.length} soru • Yaklaşık 3 dakika</span>
-      </p>
+    <div className="animate-up">
+      <PageHeader
+        icon={FaBullseye}
+        kicker="Holland Testi"
+        title="Holland Kariyer Testi"
+        desc="Aşağıdaki ifadelere ne kadar katıldığını 1'den 5'e kadar puanla."
+        actions={(
+          <span className="tag">
+            <FaClock /> {QUESTIONS.length} soru • Yaklaşık 3 dakika
+          </span>
+        )}
+      />
 
-      <div style={{ marginBottom: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: theme.textSecondary, marginBottom: '4px' }}>
+      <div className="mb-16">
+        <div className="flex-between text-sm text-muted">
           <span>Soru {currentQuestion + 1}/{QUESTIONS.length}</span>
           <span>%{Math.round(progress)}</span>
         </div>
-        <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '4px' }}>
-          <div style={{ width: `${progress}%`, height: '100%', background: theme.accentMain, borderRadius: '4px', transition: 'width 0.3s ease' }} />
+        <div className="progress mt-8">
+          <span style={{ width: `${progress}%` }} />
         </div>
       </div>
 
-      <div style={{ background: theme.cardBg, padding: '32px', borderRadius: '20px', border: theme.cardBorder, marginBottom: '24px' }}>
-        <p style={{ color: theme.textPrimary, fontSize: '20px', fontWeight: '500', lineHeight: '1.6' }}>{q.text}</p>
+      <div className="panel panel-lg">
+        <h3 className="block-title">{q.text}</h3>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '24px' }}>
+        <div className="grid-auto mt-16">
           {[1, 2, 3, 4, 5].map((val) => (
             <button
               key={val}
+              className={`btn ${answers[q.id] === val ? 'btn-primary' : 'btn-outline'}`}
               onClick={() => handleAnswer(val)}
-              style={{
-                padding: '12px 20px',
-                background: answers[q.id] === val ? `${theme.accentMain}20` : 'rgba(255,255,255,0.04)',
-                border: answers[q.id] === val ? `2px solid ${theme.accentMain}` : '1px solid rgba(255,255,255,0.06)',
-                borderRadius: '12px',
-                color: theme.textPrimary,
-                fontSize: '15px',
-                cursor: 'pointer',
-                textAlign: 'left',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                if (answers[q.id] !== val) e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
-              }}
-              onMouseLeave={(e) => {
-                if (answers[q.id] !== val) e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
-              }}
             >
-              {val === 1 && '❌ Hiç katılmıyorum'}
-              {val === 2 && '❌ Katılmıyorum'}
-              {val === 3 && '🤔 Kararsızım'}
-              {val === 4 && '✅ Katılıyorum'}
-              {val === 5 && '✅✅ Tamamen katılıyorum'}
+              {val === 1 && (
+                <>
+                  <FaTimesCircle /> Hiç katılmıyorum
+                </>
+              )}
+              {val === 2 && (
+                <>
+                  <FaTimesCircle /> Katılmıyorum
+                </>
+              )}
+              {val === 3 && (
+                <>
+                  <FaQuestionCircle /> Kararsızım
+                </>
+              )}
+              {val === 4 && (
+                <>
+                  <FaCheckCircle /> Katılıyorum
+                </>
+              )}
+              {val === 5 && (
+                <>
+                  <FaCheckDouble /> Tamamen katılıyorum
+                </>
+              )}
             </button>
           ))}
         </div>

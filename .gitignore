@@ -5,3 +5,8 @@ build/
 *.zip
 *.rar
 *.mp4
+
+# Ortam değişkenleri (Supabase anahtarları vb.) — repoya gönderilmemeli
+.env
+.env.local
+.env.*.local

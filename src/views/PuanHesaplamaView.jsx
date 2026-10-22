@@ -1,7 +1,19 @@
 // src/views/PuanHesaplamaView.jsx
 
 import { useState } from 'react';
-import { APP_THEME } from '../constants/theme';
+import {
+  FaChartBar,
+  FaFileAlt,
+  FaRulerCombined,
+  FaBalanceScale,
+  FaBookOpen,
+  FaGlobeEurope,
+  FaGraduationCap,
+  FaRocket,
+  FaBullseye,
+  FaTrophy,
+} from 'react-icons/fa';
+import { PageHeader } from '../components/PageHeader';
 
 // ---------- YKS SORU LİMİTLERİ ----------
 const MAX_SORU = {
@@ -155,75 +167,43 @@ const calcNet = (d, y) => {
   return Math.max(0, dogru - (yanlis / 4));
 };
 
+// Sonuç tablosunda gösterilen alanlar
+const ALANLAR = [
+  { key: 'SAY', name: <span className="meta-item"><FaRulerCombined /> SAYISAL</span> },
+  { key: 'EA', name: <span className="meta-item"><FaBalanceScale /> EŞİT AĞIRLIK</span> },
+  { key: 'SOZ', name: <span className="meta-item"><FaBookOpen /> SÖZEL</span> },
+  { key: 'DIL', name: <span className="meta-item"><FaGlobeEurope /> YABANCI DİL</span> },
+];
+
 // Input bileşeni
-const InputRow = ({ sinav, dersAdi, dersKey, maxSoru, data, handleInputChange, theme }) => {
+const InputRow = ({ sinav, dersAdi, dersKey, maxSoru, data, handleInputChange }) => {
   const net = calcNet(data.d, data.y);
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-      <span style={{ color: theme.textPrimary, fontSize: '14px', fontWeight: '600', flex: 1 }}>{dersAdi}</span>
-      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-        
-        {/* Doğru Girişi */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <span style={{ fontSize: '10px', color: '#10b981', marginBottom: '2px', fontWeight: '700' }}>D</span>
-          <input
-            type="number"
-            min="0"
-            value={data.d === 0 ? '' : data.d}
-            onChange={(e) => handleInputChange(sinav, dersKey, 'd', e.target.value, maxSoru)}
-            placeholder="0"
-            style={{
-              width: '48px',
-              padding: '6px',
-              borderRadius: '6px',
-              border: '1.5px solid #10b981',
-              background: '#334155',
-              color: '#ffffff',
-              fontSize: '15px',
-              fontWeight: '700',
-              textAlign: 'center',
-              outline: 'none'
-            }}
-          />
-        </div>
-
-        {/* Yanlış Girişi */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <span style={{ fontSize: '10px', color: '#ef4444', marginBottom: '2px', fontWeight: '700' }}>Y</span>
-          <input
-            type="number"
-            min="0"
-            value={data.y === 0 ? '' : data.y}
-            onChange={(e) => handleInputChange(sinav, dersKey, 'y', e.target.value, maxSoru)}
-            placeholder="0"
-            style={{
-              width: '48px',
-              padding: '6px',
-              borderRadius: '6px',
-              border: '1.5px solid #ef4444',
-              background: '#334155',
-              color: '#ffffff',
-              fontSize: '15px',
-              fontWeight: '700',
-              textAlign: 'center',
-              outline: 'none'
-            }}
-          />
-        </div>
-
-        {/* Net Göstergesi */}
-        <div style={{ width: '55px', textAlign: 'right', color: theme.accentMain, fontWeight: '700', fontSize: '15px' }}>
-          {net.toFixed(2)}
-        </div>
-      </div>
+    <div className="field">
+      <span className="field-label">{dersAdi}</span>
+      <span className="field-label">D</span>
+      <input
+        type="number"
+        min="0"
+        value={data.d === 0 ? '' : data.d}
+        onChange={(e) => handleInputChange(sinav, dersKey, 'd', e.target.value, maxSoru)}
+        placeholder="0"
+      />
+      <span className="field-label">Y</span>
+      <input
+        type="number"
+        min="0"
+        value={data.y === 0 ? '' : data.y}
+        onChange={(e) => handleInputChange(sinav, dersKey, 'y', e.target.value, maxSoru)}
+        placeholder="0"
+      />
+      <span className="td-strong text-accent">{net.toFixed(2)}</span>
     </div>
   );
 };
 
 export function PuanHesaplamaView() {
-  const theme = APP_THEME;
-
   const [tyt, setTyt] = useState({
     turkce: { d: 0, y: 0 }, sosyal: { d: 0, y: 0 },
     matematik: { d: 0, y: 0 }, fen: { d: 0, y: 0 }
@@ -335,146 +315,128 @@ export function PuanHesaplamaView() {
   };
 
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-      <h2 style={{ color: theme.accentMain, fontSize: '32px', marginBottom: '8px', textAlign: 'center' }}>
-        📊 2026 YKS Puan & Sıralama Hesaplama
-      </h2>
-      <p style={{ color: theme.textSecondary, marginBottom: '30px', textAlign: 'center' }}>
-        Resmi ÖSYM 2026 Yığılsal Dağılım Tablolarıyla (Ham + Yerleştirme) Hesaplar.
-      </p>
+    <div>
+      <PageHeader
+        kicker="ARAÇLAR"
+        icon={FaChartBar}
+        title="2026 YKS Puan & Sıralama Hesaplama"
+        desc="Resmi ÖSYM 2026 Yığılsal Dağılım Tablolarıyla (Ham + Yerleştirme) Hesaplar."
+      />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', marginBottom: '30px' }}>
-        <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '16px', border: theme.cardBorder }}>
-          <h4 style={{ color: theme.textPrimary, fontSize: '18px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            📝 TYT <span style={{ fontSize: '12px', fontWeight: 'normal', color: theme.textSecondary }}>(Temel Yeterlilik)</span>
-          </h4>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <InputRow sinav="TYT" dersAdi="Türkçe" dersKey="turkce" maxSoru={MAX_SORU.TYT.turkce} data={tyt.turkce} handleInputChange={handleInputChange} theme={theme} />
-            <InputRow sinav="TYT" dersAdi="Sosyal Bilimler" dersKey="sosyal" maxSoru={MAX_SORU.TYT.sosyal} data={tyt.sosyal} handleInputChange={handleInputChange} theme={theme} />
-            <InputRow sinav="TYT" dersAdi="Matematik" dersKey="matematik" maxSoru={MAX_SORU.TYT.matematik} data={tyt.matematik} handleInputChange={handleInputChange} theme={theme} />
-            <InputRow sinav="TYT" dersAdi="Fen Bilimleri" dersKey="fen" maxSoru={MAX_SORU.TYT.fen} data={tyt.fen} handleInputChange={handleInputChange} theme={theme} />
-          </div>
-        </div>
-
-        <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '16px', border: theme.cardBorder }}>
-          <h4 style={{ color: '#06b6d4', fontSize: '18px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            📐 SAY / EA <span style={{ fontSize: '12px', fontWeight: 'normal', color: theme.textSecondary }}>(Ortak Alanlar)</span>
-          </h4>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <InputRow sinav="AYT" dersAdi="Matematik" dersKey="matematik" maxSoru={MAX_SORU.AYT.matematik} data={ayt.matematik} handleInputChange={handleInputChange} theme={theme} />
-            <InputRow sinav="AYT" dersAdi="Fizik" dersKey="fizik" maxSoru={MAX_SORU.AYT.fizik} data={ayt.fizik} handleInputChange={handleInputChange} theme={theme} />
-            <InputRow sinav="AYT" dersAdi="Kimya" dersKey="kimya" maxSoru={MAX_SORU.AYT.kimya} data={ayt.kimya} handleInputChange={handleInputChange} theme={theme} />
-            <InputRow sinav="AYT" dersAdi="Biyoloji" dersKey="biyoloji" maxSoru={MAX_SORU.AYT.biyoloji} data={ayt.biyoloji} handleInputChange={handleInputChange} theme={theme} />
-            <InputRow sinav="AYT" dersAdi="Edebiyat" dersKey="edebiyat" maxSoru={MAX_SORU.AYT.edebiyat} data={ayt.edebiyat} handleInputChange={handleInputChange} theme={theme} />
-            <InputRow sinav="AYT" dersAdi="Tarih - 1" dersKey="tarih1" maxSoru={MAX_SORU.AYT.tarih1} data={ayt.tarih1} handleInputChange={handleInputChange} theme={theme} />
-            <InputRow sinav="AYT" dersAdi="Coğrafya - 1" dersKey="cografya1" maxSoru={MAX_SORU.AYT.cografya1} data={ayt.cografya1} handleInputChange={handleInputChange} theme={theme} />
-          </div>
-        </div>
-
-        <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '16px', border: theme.cardBorder }}>
-          <h4 style={{ color: '#ec4899', fontSize: '18px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            📖 SÖZ / DİL <span style={{ fontSize: '12px', fontWeight: 'normal', color: theme.textSecondary }}>(Sosyal 2 & Dil)</span>
-          </h4>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <InputRow sinav="AYT" dersAdi="Tarih - 2" dersKey="tarih2" maxSoru={MAX_SORU.AYT.tarih2} data={ayt.tarih2} handleInputChange={handleInputChange} theme={theme} />
-            <InputRow sinav="AYT" dersAdi="Coğrafya - 2" dersKey="cografya2" maxSoru={MAX_SORU.AYT.cografya2} data={ayt.cografya2} handleInputChange={handleInputChange} theme={theme} />
-            <InputRow sinav="AYT" dersAdi="Felsefe Grubu" dersKey="felsefe" maxSoru={MAX_SORU.AYT.felsefe} data={ayt.felsefe} handleInputChange={handleInputChange} theme={theme} />
-            <InputRow sinav="AYT" dersAdi="Din Kültürü" dersKey="din" maxSoru={MAX_SORU.AYT.din} data={ayt.din} handleInputChange={handleInputChange} theme={theme} />
-            <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '8px 0' }}></div>
-            <InputRow sinav="AYT" dersAdi="Yabancı Dil (YDT)" dersKey="dil" maxSoru={MAX_SORU.AYT.dil} data={ayt.dil} handleInputChange={handleInputChange} theme={theme} />
-          </div>
+      <div className="panel mb-24">
+        <h4 className="panel-title"><FaFileAlt /> TYT <span className="text-faint text-sm">(Temel Yeterlilik)</span></h4>
+        <div className="grid-auto grid-3">
+          <InputRow sinav="TYT" dersAdi="Türkçe" dersKey="turkce" maxSoru={MAX_SORU.TYT.turkce} data={tyt.turkce} handleInputChange={handleInputChange} />
+          <InputRow sinav="TYT" dersAdi="Sosyal Bilimler" dersKey="sosyal" maxSoru={MAX_SORU.TYT.sosyal} data={tyt.sosyal} handleInputChange={handleInputChange} />
+          <InputRow sinav="TYT" dersAdi="Matematik" dersKey="matematik" maxSoru={MAX_SORU.TYT.matematik} data={tyt.matematik} handleInputChange={handleInputChange} />
+          <InputRow sinav="TYT" dersAdi="Fen Bilimleri" dersKey="fen" maxSoru={MAX_SORU.TYT.fen} data={tyt.fen} handleInputChange={handleInputChange} />
         </div>
       </div>
 
-      <div style={{ background: theme.cardBg, padding: '24px', borderRadius: '16px', border: theme.cardBorder, display: 'flex', gap: '20px', alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: '30px', justifyContent: 'center' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <label style={{ color: theme.textSecondary, fontSize: '14px', fontWeight: '600' }}>🎓 Diploma Notu (50-100)</label>
+      <div className="panel mb-24">
+        <h4 className="panel-title"><FaRulerCombined /> SAY / EA <span className="text-faint text-sm">(Ortak Alanlar)</span></h4>
+        <div className="grid-auto grid-3">
+          <InputRow sinav="AYT" dersAdi="Matematik" dersKey="matematik" maxSoru={MAX_SORU.AYT.matematik} data={ayt.matematik} handleInputChange={handleInputChange} />
+          <InputRow sinav="AYT" dersAdi="Fizik" dersKey="fizik" maxSoru={MAX_SORU.AYT.fizik} data={ayt.fizik} handleInputChange={handleInputChange} />
+          <InputRow sinav="AYT" dersAdi="Kimya" dersKey="kimya" maxSoru={MAX_SORU.AYT.kimya} data={ayt.kimya} handleInputChange={handleInputChange} />
+          <InputRow sinav="AYT" dersAdi="Biyoloji" dersKey="biyoloji" maxSoru={MAX_SORU.AYT.biyoloji} data={ayt.biyoloji} handleInputChange={handleInputChange} />
+          <InputRow sinav="AYT" dersAdi="Edebiyat" dersKey="edebiyat" maxSoru={MAX_SORU.AYT.edebiyat} data={ayt.edebiyat} handleInputChange={handleInputChange} />
+          <InputRow sinav="AYT" dersAdi="Tarih - 1" dersKey="tarih1" maxSoru={MAX_SORU.AYT.tarih1} data={ayt.tarih1} handleInputChange={handleInputChange} />
+          <InputRow sinav="AYT" dersAdi="Coğrafya - 1" dersKey="cografya1" maxSoru={MAX_SORU.AYT.cografya1} data={ayt.cografya1} handleInputChange={handleInputChange} />
+        </div>
+      </div>
+
+      <div className="panel mb-24">
+        <h4 className="panel-title"><FaBookOpen /> SÖZ / DİL <span className="text-faint text-sm">(Sosyal 2 & Dil)</span></h4>
+        <div className="grid-auto grid-3">
+          <InputRow sinav="AYT" dersAdi="Tarih - 2" dersKey="tarih2" maxSoru={MAX_SORU.AYT.tarih2} data={ayt.tarih2} handleInputChange={handleInputChange} />
+          <InputRow sinav="AYT" dersAdi="Coğrafya - 2" dersKey="cografya2" maxSoru={MAX_SORU.AYT.cografya2} data={ayt.cografya2} handleInputChange={handleInputChange} />
+          <InputRow sinav="AYT" dersAdi="Felsefe Grubu" dersKey="felsefe" maxSoru={MAX_SORU.AYT.felsefe} data={ayt.felsefe} handleInputChange={handleInputChange} />
+          <InputRow sinav="AYT" dersAdi="Din Kültürü" dersKey="din" maxSoru={MAX_SORU.AYT.din} data={ayt.din} handleInputChange={handleInputChange} />
+          <InputRow sinav="AYT" dersAdi="Yabancı Dil (YDT)" dersKey="dil" maxSoru={MAX_SORU.AYT.dil} data={ayt.dil} handleInputChange={handleInputChange} />
+        </div>
+      </div>
+
+      <div className="panel mb-24 flex flex-wrap">
+        <div className="field">
+          <label className="field-label"><span className="meta-item"><FaGraduationCap /> Diploma Notu (50-100)</span></label>
           <input
             type="number"
             value={diplomaNotu}
             onChange={(e) => setDiplomaNotu(e.target.value)}
             min="50"
             max="100"
-            style={{
-              padding: '12px',
-              borderRadius: '8px',
-              border: `2px solid ${theme.accentMain}`,
-              background: '#334155',
-              color: '#fff',
-              fontSize: '18px',
-              fontWeight: '700',
-              outline: 'none',
-              width: '150px',
-              textAlign: 'center'
-            }}
           />
         </div>
-        <button onClick={hesapla} style={{ padding: '14px 40px', background: theme.accentMain, color: '#fff', border: 'none', borderRadius: '8px', fontSize: '18px', fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 15px rgba(249,115,22,0.3)' }}>
-          🚀 Puanları & Sıralamayı Hesapla
+        <button className="btn btn-primary" onClick={hesapla}>
+          <FaRocket /> Puanları & Sıralamayı Hesapla
         </button>
       </div>
 
-      {sonuc && (
-        <div style={{ animation: 'fadeIn 0.5s ease' }}>
-          <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-            <span style={{ background: 'rgba(139,92,246,0.15)', color: '#a78bfa', padding: '8px 16px', borderRadius: '20px', fontSize: '14px', fontWeight: '600', border: '1px solid rgba(139,92,246,0.3)' }}>
-              🎯 OBP Katkısı: <strong>+{sonuc.obp} Puan</strong> (ÖSYM 2026 Verileri)
-            </span>
+      {sonuc ? (
+        <div className="animate-up">
+          <div className="note note-accent mb-24">
+            <span className="meta-item"><FaBullseye /> OBP Katkısı:</span> <strong>+{sonuc.obp} Puan</strong> (ÖSYM 2026 Verileri)
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-            
-            {/* TYT KARTI */}
-            <div style={{ background: 'linear-gradient(145deg, #1e293b, #0f172a)', padding: '24px', borderRadius: '16px', border: '2px solid #10b981' }}>
-              <div style={{ color: '#10b981', fontSize: '20px', fontWeight: '800', marginBottom: '16px' }}>📝 TYT (2 Yıllık)</div>
-              
-              {/* Ham Puan & Sıralama */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span style={{ color: theme.textSecondary, fontSize: '14px' }}>Ham Puan / Sıralama:</span>
-                <span style={{ color: '#fff', fontWeight: '700', fontSize: '14px' }}>{sonuc.tytPuan} (<strong>~{sonuc.tytHamSiralama}</strong>)</span>
-              </div>
-
-              {/* Yerleştirme Puan & Sıralama */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
-                <span style={{ color: '#10b981', fontWeight: '600', fontSize: '15px' }}>Yerleştirme Puanı:</span>
-                <span style={{ color: '#10b981', fontWeight: '800', fontSize: '16px' }}>{sonuc.tytYerlesmePuan}</span>
-              </div>
-              <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '10px 0' }}></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: '#f59e0b', fontWeight: '700', fontSize: '14px' }}>🏆 Yerleştirme Sıralaması:</span>
-                <span style={{ color: '#f59e0b', fontWeight: '800', fontSize: '18px' }}>~{sonuc.tytYerlesmeSiralama || '-'}</span>
-              </div>
+          <div className="metric-strip mb-24">
+            <div className="stat-tile">
+              <div className="stat-label"><span className="meta-item"><FaFileAlt /> TYT Puanı</span></div>
+              <div className="stat-value">{sonuc.tytPuan}</div>
             </div>
-
-            {/* ALAN KARTLARI */}
-            {[
-              { key: 'SAY', name: '📐 SAYISAL', color: '#06b6d4' },
-              { key: 'EA', name: '⚖️ EŞİT AĞIRLIK', color: '#f59e0b' },
-              { key: 'SOZ', name: '📖 SÖZEL', color: '#ec4899' },
-              { key: 'DIL', name: '🌍 YABANCI DİL', color: '#3b82f6' }
-            ].map(tur => (
-              <div key={tur.key} style={{ background: 'linear-gradient(145deg, #1e293b, #0f172a)', padding: '24px', borderRadius: '16px', border: `2px solid ${tur.color}` }}>
-                <div style={{ color: tur.color, fontSize: '20px', fontWeight: '800', marginBottom: '16px' }}>{tur.name}</div>
-                
-                {/* Ham Puan & Sıralama */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                  <span style={{ color: theme.textSecondary, fontSize: '14px' }}>Ham Puan / Sıralama:</span>
-                  <span style={{ color: '#fff', fontWeight: '700', fontSize: '14px' }}>{sonuc.alanlar[tur.key].hamPuan} (<strong>~{sonuc.alanlar[tur.key].hamSiralama}</strong>)</span>
-                </div>
-
-                {/* Yerleştirme Puan & Sıralama */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
-                  <span style={{ color: tur.color, fontWeight: '600', fontSize: '15px' }}>Yerleştirme Puanı:</span>
-                  <span style={{ color: tur.color, fontWeight: '800', fontSize: '16px' }}>{sonuc.alanlar[tur.key].yerlesmePuan}</span>
-                </div>
-                <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '10px 0' }}></div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: '#f59e0b', fontWeight: '700', fontSize: '14px' }}>🏆 Yerleştirme Sıralaması:</span>
-                  <span style={{ color: '#f59e0b', fontWeight: '800', fontSize: '18px' }}>~{sonuc.alanlar[tur.key].yerlesmeSiralama || '-'}</span>
-                </div>
-              </div>
-            ))}
+            <div className="stat-tile">
+              <div className="stat-label"><span className="meta-item"><FaBullseye /> TYT Yerleştirme</span></div>
+              <div className="stat-value">{sonuc.tytYerlesmePuan}</div>
+            </div>
+            <div className="stat-tile">
+              <div className="stat-label"><span className="meta-item"><FaTrophy /> TYT Sıralama</span></div>
+              <div className="stat-value">~{sonuc.tytYerlesmeSiralama || '-'}</div>
+            </div>
+            <div className="stat-tile">
+              <div className="stat-label"><span className="meta-item"><FaGraduationCap /> OBP Katkısı</span></div>
+              <div className="stat-value">+{sonuc.obp}</div>
+            </div>
           </div>
+
+          <div className="dtable-wrap">
+            <div className="dtable-scroll">
+              <table className="dtable">
+                <thead>
+                  <tr>
+                    <th>Alan</th>
+                    <th className="center">Ham Puan</th>
+                    <th className="center">Ham Sıralama</th>
+                    <th className="center">Yerleştirme Puanı</th>
+                    <th className="center">Yerleştirme Sıralaması</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="td-strong"><span className="meta-item"><FaFileAlt /> TYT (2 Yıllık)</span></td>
+                    <td className="center">{sonuc.tytPuan}</td>
+                    <td className="center">~{sonuc.tytHamSiralama}</td>
+                    <td className="center td-strong text-accent">{sonuc.tytYerlesmePuan}</td>
+                    <td className="center td-strong">~{sonuc.tytYerlesmeSiralama || '-'}</td>
+                  </tr>
+                  {ALANLAR.map((tur) => (
+                    <tr key={tur.key}>
+                      <td className="td-strong">{tur.name}</td>
+                      <td className="center">{sonuc.alanlar[tur.key].hamPuan}</td>
+                      <td className="center">~{sonuc.alanlar[tur.key].hamSiralama}</td>
+                      <td className="center td-strong text-accent">{sonuc.alanlar[tur.key].yerlesmePuan}</td>
+                      <td className="center td-strong">~{sonuc.alanlar[tur.key].yerlesmeSiralama || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="empty-state">
+          <div className="empty-icon"><FaChartBar /></div>
+          <h3 className="empty-title">Sonuç bekleniyor</h3>
+          <p>Doğru ve yanlış sayılarınızı girip hesaplama yapın.</p>
         </div>
       )}
     </div>

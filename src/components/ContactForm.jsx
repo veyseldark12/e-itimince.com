@@ -14,11 +14,11 @@ export function ContactForm() {
       '3GKBcr-kZRuTzMZn9'        // Public Key
     )
     .then(() => {
-      alert('Mesaj gönderildi ✅');
+      alert('Mesaj gönderildi');
       form.current.reset();
     })
     .catch((err) => {
-      alert('Hata oluştu ❌ ' + err.text);
+      alert('Hata oluştu ' + err.text);
     });
   };
 

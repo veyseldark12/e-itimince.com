@@ -1,79 +1,68 @@
 // src/views/FavoritesView.jsx
 
-import { APP_THEME } from '../constants/theme';
+import { FaStar, FaBullseye, FaUniversity } from 'react-icons/fa';
+import { PageHeader } from '../components/PageHeader';
 
 export function FavoritesView({ favorites, allDepartments, toggleFavorite }) {
-  const theme = APP_THEME;
   const favoriteDepts = allDepartments.filter((d) => favorites.includes(d.id));
 
   return (
     <div>
-      <h2 style={{ color: theme.accentMain, fontSize: '28px', marginBottom: '10px' }}>
-        ⭐ Tercih Listem
-      </h2>
-      <p style={{ color: theme.textSecondary, marginBottom: '30px' }}>
-        Yıldızladığınız favori bölümleriniz burada listelenir.
-      </p>
+      <PageHeader
+        icon={FaStar}
+        kicker="TERCİHLERİM"
+        title="Tercih Listem"
+        desc="Yıldızladığınız favori bölümleriniz burada listelenir."
+      />
 
       {favorites.length === 0 ? (
-        <div
-          style={{
-            background: theme.cardBg,
-            padding: '60px',
-            textAlign: 'center',
-            borderRadius: '24px',
-            border: theme.cardBorder,
-          }}
-        >
-          <p style={{ color: theme.textSecondary, fontSize: '16px' }}>
+        <div className="empty-state">
+          <div className="empty-icon">
+            <FaStar />
+          </div>
+          <h3 className="empty-title">Henüz favori eklemediniz</h3>
+          <p className="text-muted">
             Tercih listeniz henüz boş. Üniversite bölümlerinin yanındaki yıldız ikonuna tıklayarak favorilerinize ekleyin.
           </p>
+          <div className="mt-16">
+            <button
+              className="btn btn-primary"
+              onClick={() => { window.location.hash = '#/test'; }}
+            >
+              <FaBullseye /> Uyum Testini Çöz
+            </button>{' '}
+            <button
+              className="btn btn-outline"
+              onClick={() => { window.location.hash = '#/universiteler'; }}
+            >
+              <FaUniversity /> Üniversiteleri Keşfet
+            </button>
+          </div>
         </div>
       ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-            gap: '20px',
-          }}
-        >
+        <div className="grid-auto grid-2">
           {favoriteDepts.map((dept) => (
-            <div
-              key={dept.id}
-              style={{
-                background: theme.cardBg,
-                borderRadius: '20px',
-                padding: '24px',
-                border: theme.cardBorder,
-                position: 'relative',
-              }}
-            >
-              <button
-                onClick={() => toggleFavorite(dept.id)}
-                style={{
-                  position: 'absolute',
-                  top: '16px',
-                  right: '16px',
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '20px',
-                }}
-              >
-                ⭐
-              </button>
-              <div style={{ color: theme.accentMain, fontSize: '13px', fontWeight: '700', marginBottom: '4px' }}>
-                {dept.uniName}
+            <div key={dept.id} className="panel hover-lift">
+              <div className="flex-between mb-16">
+                <span className="tag tag-accent">{dept.uniName}</span>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  aria-label="Favorilerden çıkar"
+                  onClick={() => toggleFavorite(dept.id)}
+                >
+                  <FaStar />
+                </button>
               </div>
-              <h3 style={{ color: theme.textPrimary, fontSize: '18px', marginBottom: '8px' }}>
-                {dept.name}
-              </h3>
-              <div style={{ display: 'flex', gap: '8px', fontSize: '12px', color: theme.accentCyan, marginBottom: '12px' }}>
-                <span>{dept.type}</span> • <span>Sıra: {dept.rank2025}</span> • <span>Kont: {dept.quota}</span>
+
+              <h3 className="block-title">{dept.name}</h3>
+
+              <div className="flex-wrap mb-16">
+                <span className="tag">{dept.type}</span>
+                <span className="tag">Sıra: {dept.rank2025}</span>
+                <span className="tag">Kont: {dept.quota}</span>
               </div>
-              <p style={{ fontSize: '13px', color: theme.textSecondary, margin: 0 }}>
-                {dept.description}
-              </p>
+
+              <p className="card-desc">{dept.description}</p>
             </div>
           ))}
         </div>

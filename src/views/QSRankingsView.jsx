@@ -1,11 +1,23 @@
 // src/views/QSRankingsView.jsx
 
 import { useState, useMemo } from 'react';
-import { APP_THEME } from '../constants/theme';
+import {
+  FaGlobeEurope,
+  FaBookOpen,
+  FaSearch,
+  FaSyncAlt,
+  FaUniversity,
+  FaMedal,
+  FaStar,
+  FaChartLine,
+  FaTimesCircle,
+  FaFrown,
+  FaLightbulb,
+} from 'react-icons/fa';
+import { PageHeader } from '../components/PageHeader';
 import { uniDatabase } from '../data/uniDatabase';
 
 export function QSRankingsView() {
-  const theme = APP_THEME;
   const [selectedSubject, setSelectedSubject] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('rank'); // rank veya name
@@ -40,7 +52,7 @@ export function QSRankingsView() {
     // Arama filtresi
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      list = list.filter(uni => 
+      list = list.filter(uni =>
         uni.name.toLowerCase().includes(term) ||
         uni.key.toLowerCase().includes(term)
       );
@@ -82,56 +94,42 @@ export function QSRankingsView() {
 
   // Renk belirle
   const getQSRankColor = (rank) => {
-    if (rank === undefined || rank === null) return theme.textSecondary;
+    if (rank === undefined || rank === null) return 'var(--text-muted)';
     const num = typeof rank === 'string' ? parseInt(rank) : rank;
-    if (num <= 100) return '#10b981';
-    if (num <= 300) return '#3b82f6';
-    if (num <= 500) return '#f59e0b';
-    return '#ef4444';
+    if (num <= 100) return 'var(--success)';
+    if (num <= 300) return 'var(--cyan)';
+    if (num <= 500) return 'var(--accent)';
+    return 'var(--danger)';
+  };
+
+  // Rozet sınıfı belirle
+  const getQSRankTag = (rank) => {
+    const num = typeof rank === 'string' ? parseInt(rank) : rank;
+    if (num <= 100) return 'tag tag-success';
+    if (num <= 300) return 'tag tag-cyan';
+    if (num <= 500) return 'tag tag-warn';
+    return 'tag tag-danger';
   };
 
   return (
     <div>
-      <h2 style={{ color: theme.textPrimary, fontSize: '28px', fontWeight: '800', marginBottom: '8px' }}>
-        🌍 QS Dünya Üniversite Sıralamaları
-      </h2>
-      <p style={{ color: theme.textSecondary, fontSize: '16px', marginBottom: '32px' }}>
-        Türkiye'deki üniversitelerin QS Dünya Sıralamaları ve alan bazlı performansları.
-      </p>
+      <PageHeader
+        kicker="SIRALAMALAR"
+        icon={FaGlobeEurope}
+        title="QS Dünya Üniversite Sıralamaları"
+        desc="Türkiye'deki üniversitelerin QS Dünya Sıralamaları ve alan bazlı performansları."
+      />
 
       {/* Filtreler */}
-      <div style={{
-        display: 'flex',
-        gap: '16px',
-        flexWrap: 'wrap',
-        marginBottom: '24px',
-        background: theme.cardBg,
-        padding: '20px 24px',
-        borderRadius: '16px',
-        border: theme.cardBorder,
-        alignItems: 'center',
-      }}>
+      <div className="toolbar">
         {/* Subject Seçimi */}
-        <div style={{ flex: 1, minWidth: '200px' }}>
-          <label style={{ color: theme.textSecondary, fontSize: '12px', display: 'block', marginBottom: '4px' }}>
-            📚 Alan Seç
-          </label>
+        <div className="field">
+          <label className="field-label"><span className="meta-item"><FaBookOpen /> Alan Seç</span></label>
           <select
             value={selectedSubject}
             onChange={(e) => setSelectedSubject(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '10px 16px',
-              borderRadius: '12px',
-              border: '2px solid rgba(255,255,255,0.1)',
-              background: 'rgba(255,255,255,0.05)',
-              color: theme.textPrimary,
-              fontSize: '14px',
-              outline: 'none',
-              cursor: 'pointer',
-            }}
           >
-            <option value="ALL">📊 Tüm Alanlar (Genel Sıralama)</option>
+            <option value="ALL">Tüm Alanlar (Genel Sıralama)</option>
             {allSubjects.map(subject => (
               <option key={subject} value={subject}>{subject}</option>
             ))}
@@ -139,193 +137,122 @@ export function QSRankingsView() {
         </div>
 
         {/* Arama */}
-        <div style={{ flex: 1, minWidth: '200px' }}>
-          <label style={{ color: theme.textSecondary, fontSize: '12px', display: 'block', marginBottom: '4px' }}>
-            🔍 Üniversite Ara
-          </label>
+        <div className="field">
+          <label className="field-label"><span className="meta-item"><FaSearch /> Üniversite Ara</span></label>
           <input
             type="text"
             placeholder="Üniversite adı..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '10px 16px',
-              borderRadius: '12px',
-              border: '2px solid rgba(255,255,255,0.1)',
-              background: 'rgba(255,255,255,0.05)',
-              color: theme.textPrimary,
-              fontSize: '14px',
-              outline: 'none',
-            }}
           />
         </div>
 
         {/* Sıralama */}
-        <div style={{ minWidth: '150px' }}>
-          <label style={{ color: theme.textSecondary, fontSize: '12px', display: 'block', marginBottom: '4px' }}>
-            🔄 Sıralama
-          </label>
+        <div className="field">
+          <label className="field-label"><span className="meta-item"><FaSyncAlt /> Sıralama</span></label>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '10px 16px',
-              borderRadius: '12px',
-              border: '2px solid rgba(255,255,255,0.1)',
-              background: 'rgba(255,255,255,0.05)',
-              color: theme.textPrimary,
-              fontSize: '14px',
-              outline: 'none',
-              cursor: 'pointer',
-            }}
           >
-            <option value="rank">📈 QS'ye Göre</option>
-            <option value="name">🔤 Alfabetik</option>
+            <option value="rank">QS'ye Göre</option>
+            <option value="name">Alfabetik</option>
           </select>
         </div>
 
         {/* Sonuç sayısı */}
-        <div style={{ 
-          padding: '10px 16px',
-          background: 'rgba(255,255,255,0.05)',
-          borderRadius: '12px',
-          textAlign: 'center',
-          minWidth: '100px',
-        }}>
-          <div style={{ color: theme.textSecondary, fontSize: '12px' }}>Sonuç</div>
-          <div style={{ color: theme.textPrimary, fontSize: '18px', fontWeight: '700' }}>
-            {filteredUniversities.length}
-          </div>
+        <div className="field-static">
+          <span className="field-static-label">Sonuç</span>
+          <span className="field-static-value">{filteredUniversities.length}</span>
         </div>
       </div>
 
       {/* Tablo */}
-      <div style={{
-        background: theme.cardBg,
-        borderRadius: '16px',
-        overflow: 'hidden',
-        border: theme.cardBorder,
-      }}>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid rgba(255,255,255,0.1)' }}>
-                <th style={{ padding: '14px 20px', textAlign: 'left', color: theme.textSecondary, width: '50px' }}>
-                  #
-                </th>
-                <th style={{ padding: '14px 20px', textAlign: 'left', color: theme.textSecondary }}>
-                  🏛️ Üniversite
-                </th>
-                <th style={{ padding: '14px 20px', textAlign: 'center', color: theme.textSecondary, width: '120px' }}>
-                  {selectedSubject === 'ALL' ? '🌍 QS Genel' : `📚 ${selectedSubject}`}
-                </th>
-                <th style={{ padding: '14px 20px', textAlign: 'center', color: theme.textSecondary, width: '120px' }}>
-                  🌍 QS Genel
-                </th>
-                <th style={{ padding: '14px 20px', textAlign: 'center', color: theme.textSecondary, width: '100px' }}>
-                  Durum
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredUniversities.length > 0 ? (
-                filteredUniversities.map((uni, index) => {
-                  const subjectRank = selectedSubject !== 'ALL' 
-                    ? uni.qsDetails?.[selectedSubject] 
+      {filteredUniversities.length > 0 ? (
+        <div className="dtable-wrap">
+          <div className="dtable-scroll">
+            <table className="dtable">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th><span className="meta-item"><FaUniversity /> Üniversite</span></th>
+                  <th className="center">
+                    {selectedSubject === 'ALL'
+                      ? <span className="meta-item"><FaGlobeEurope /> QS Genel</span>
+                      : <span className="meta-item"><FaBookOpen /> {selectedSubject}</span>}
+                  </th>
+                  <th className="center"><span className="meta-item"><FaGlobeEurope /> QS Genel</span></th>
+                  <th className="center">Durum</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredUniversities.map((uni, index) => {
+                  const subjectRank = selectedSubject !== 'ALL'
+                    ? uni.qsDetails?.[selectedSubject]
                     : uni.qs;
                   const hasSubjectRank = subjectRank !== undefined && subjectRank !== null;
 
                   return (
-                    <tr
-                      key={uni.key}
-                      style={{
-                        borderBottom: '1px solid rgba(255,255,255,0.05)',
-                        background: index % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)',
-                        transition: 'all 0.2s',
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                      onMouseLeave={(e) => e.currentTarget.style.background = index % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)'}
-                    >
-                      <td style={{ padding: '14px 20px', color: theme.textSecondary }}>
+                    <tr key={uni.key}>
+                      <td className="text-muted">
                         {index + 1}
                       </td>
-                      <td style={{ padding: '14px 20px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ fontSize: '24px' }}>{uni.icon}</span>
-                          <span style={{ color: theme.textPrimary, fontWeight: '500' }}>
-                            {uni.name}
+                      <td>
+                        <div className="uni-cell">
+                          <span className="uni-cell-icon">
+                            <uni.icon />
                           </span>
+                          <span>{uni.name}</span>
                         </div>
                       </td>
-                      <td style={{ 
-                        padding: '14px 20px', 
-                        textAlign: 'center',
-                        fontWeight: '700',
-                        color: hasSubjectRank ? getQSRankColor(subjectRank) : theme.textSecondary,
-                      }}>
+                      <td
+                        className={`center ${hasSubjectRank ? 'td-strong' : 'text-muted'}`}
+                        style={hasSubjectRank ? { color: getQSRankColor(subjectRank) } : undefined}
+                      >
                         {hasSubjectRank ? formatQSRank(subjectRank) : '-'}
                       </td>
-                      <td style={{ 
-                        padding: '14px 20px', 
-                        textAlign: 'center',
-                        color: uni.qs ? getQSRankColor(uni.qs) : theme.textSecondary,
-                        fontWeight: uni.qs ? '600' : '400',
-                      }}>
+                      <td
+                        className={`center ${uni.qs ? 'td-strong' : 'text-muted'}`}
+                        style={uni.qs ? { color: getQSRankColor(uni.qs) } : undefined}
+                      >
                         {uni.qs ? `#${uni.qs}` : '-'}
                       </td>
-                      <td style={{ padding: '14px 20px', textAlign: 'center' }}>
+                      <td className="center">
                         {hasSubjectRank ? (
-                          <span style={{
-                            padding: '4px 12px',
-                            borderRadius: '20px',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            background: getQSRankColor(subjectRank) + '20',
-                            color: getQSRankColor(subjectRank),
-                          }}>
+                          <span className={getQSRankTag(subjectRank)}>
                             {(() => {
                               const num = typeof subjectRank === 'string' ? parseInt(subjectRank) : subjectRank;
-                              if (num <= 100) return '🏅 Dünya 100';
-                              if (num <= 300) return '⭐ İlk 300';
-                              if (num <= 500) return '📈 İlk 500';
-                              return '🌍 Dünya';
+                              if (num <= 100) return <><FaMedal /> Dünya 100</>;
+                              if (num <= 300) return <><FaStar /> İlk 300</>;
+                              if (num <= 500) return <><FaChartLine /> İlk 500</>;
+                              return <><FaGlobeEurope /> Dünya</>;
                             })()}
                           </span>
                         ) : (
-                          <span style={{ color: theme.textSecondary, fontSize: '12px' }}>❌ Veri Yok</span>
+                          <span className="text-muted text-sm meta-item"><FaTimesCircle /> Veri Yok</span>
                         )}
                       </td>
                     </tr>
                   );
-                })
-              ) : (
-                <tr>
-                  <td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: theme.textSecondary }}>
-                    😕 Bu kritere uygun üniversite bulunamadı.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="empty-state">
+          <div className="empty-icon"><FaFrown /></div>
+          <h3 className="empty-title">Bu kritere uygun üniversite bulunamadı.</h3>
+        </div>
+      )}
 
       {/* Dipnot */}
-      <div style={{
-        marginTop: '16px',
-        padding: '12px 20px',
-        background: 'rgba(255,255,255,0.03)',
-        borderRadius: '12px',
-        border: '1px solid rgba(255,255,255,0.05)',
-        color: theme.textSecondary,
-        fontSize: '13px',
-      }}>
-        💡 <strong>İpucu:</strong> Bir alan seçerek o alandaki sıralamayı görebilir, üniversite arayarak filtreleyebilirsiniz.
-        {selectedSubject !== 'ALL' && (
-          <span> • <strong>{subjectCount}</strong> üniversite bu alanda sıralamaya sahip.</span>
-        )}
+      <div className="note">
+        <span>
+          <span className="meta-item"><FaLightbulb /> <strong>İpucu:</strong></span> Bir alan seçerek o alandaki sıralamayı görebilir, üniversite arayarak filtreleyebilirsiniz.
+          {selectedSubject !== 'ALL' && (
+            <span> • <strong>{subjectCount}</strong> üniversite bu alanda sıralamaya sahip.</span>
+          )}
+        </span>
       </div>
     </div>
   );

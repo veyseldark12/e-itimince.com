@@ -1,7 +1,6 @@
 // src/App.jsx
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { APP_THEME, FONTS } from './constants/theme';
 import { uniDatabase } from './data/uniDatabase';
 import { quizQuestions } from './data/quizQuestions';
 import { bilkentData } from './data/bilkentData';
@@ -33,25 +32,75 @@ import { TUMARankingsView } from './views/TUMARankingsView';
 import { EmploymentAnalysisView } from './views/EmploymentAnalysisView';
 import { supabase } from './lib/supabaseClient';
 
-export default function App() {
-  const theme = APP_THEME;
+// Uyum testi puanlarını tek kaynaktan (uniDatabase) üretir.
+// Böylece test, uygulamadaki tüm üniversiteleri kapsar (elle tutulan 5'li liste yerine).
+const createEmptyScores = () =>
+  Object.keys(uniDatabase).reduce((acc, key) => ({ ...acc, [key]: 0 }), {});
 
-  const [activeTab, setActiveTab] = useState('anasayfa');
+// URL tabanlı gezinme: her sekmenin paylaşılabilir bir adresi (#/sekme) vardır.
+// Böylece tarayıcı geri/ileri tuşları ve doğrudan bağlantılar çalışır.
+const TAB_KEYS = [
+  'anasayfa',
+  'universiteler',
+  'karsilastir',
+  'tercihlerim',
+  'simulasyon',
+  'test',
+  'puan-hesapla',
+  'holland-test',
+  'qs-rankings',
+  'tuma-rankings',
+  'employment',
+  'teacher-panel',
+  'student-profile',
+  'my-class',
+];
+
+const tabFromHash = () => {
+  const raw = window.location.hash.replace(/^#\/?/, '').trim();
+  return TAB_KEYS.includes(raw) ? raw : 'anasayfa';
+};
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState(tabFromHash);
   const [selectedUniKey, setSelectedUniKey] = useState('all');
   const [favorites, setFavorites] = useState([]);
   const [compareList, setCompareList] = useState([]);
   const [minRank, setMinRank] = useState(10000);
   const [maxRank, setMaxRank] = useState(50000);
+  const [minScore, setMinScore] = useState('');
+  const [maxScore, setMaxScore] = useState('');
   const [simFilterType, setSimFilterType] = useState('ALL');
 
   const [currentIdx, setCurrentIdx] = useState(0);
-  const [scores, setScores] = useState({ bogazici: 0, itu: 0, odtu: 0, bilkent: 0, koc: 0 });
+  const [scores, setScores] = useState(createEmptyScores);
   const [result, setResult] = useState(null);
   const [percentageResults, setPercentageResults] = useState([]);
 
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [userClassId, setUserClassId] = useState(null);
+
+  // ---------- SEKME <-> URL EŞLEŞMESİ ----------
+  // Adres çubuğundaki #/sekme ile aktif sekme her zaman aynı kalır.
+  useEffect(() => {
+    const target = activeTab === 'anasayfa' ? '#/' : `#/${activeTab}`;
+    if (window.location.hash !== target) {
+      window.history.pushState(null, '', target);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [activeTab]);
+
+  // Geri/ileri tuşları veya elle yazılan adresler sekmeyi günceller.
+  useEffect(() => {
+    const syncFromUrl = () => setActiveTab(tabFromHash());
+    window.addEventListener('popstate', syncFromUrl);
+    window.addEventListener('hashchange', syncFromUrl);
+    return () => {
+      window.removeEventListener('popstate', syncFromUrl);
+      window.removeEventListener('hashchange', syncFromUrl);
+    };
+  }, []);
 
   // ---------- KULLANICI OTURUMU ----------
   useEffect(() => {
@@ -61,7 +110,7 @@ export default function App() {
       if (session?.user) {
         setUser(session.user);
         
-        const { data: profile, error } = await supabase
+        const { data: profile } = await supabase
           .from('profiles')
           .select('name, role, class_id')
           .eq('id', session.user.id)
@@ -256,7 +305,7 @@ export default function App() {
 
   const resetTest = () => {
     setCurrentIdx(0);
-    setScores({ bogazici: 0, itu: 0, odtu: 0, bilkent: 0, koc: 0 });
+    setScores(createEmptyScores());
     setResult(null);
     setPercentageResults([]);
   };
@@ -321,22 +370,10 @@ export default function App() {
   };
 
   return (
-    <div
-      style={{
-        fontFamily: FONTS.body,
-        background: theme.bgGradient,
-        minHeight: '100vh',
-        margin: 0,
-        padding: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        color: theme.textPrimary,
-      }}
-    >
+    <div className="app-shell">
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        handleUniSelect={handleUniSelect}
         compareCount={compareList.length}
         favoritesCount={favorites.length}
         user={user}
@@ -345,16 +382,7 @@ export default function App() {
         onLogout={handleLogout}
       />
 
-      <div
-        style={{
-          maxWidth: '1200px',
-          width: '100%',
-          margin: '0 auto',
-          padding: '40px 24px 60px',
-          flex: 1,
-          boxSizing: 'border-box',
-        }}
-      >
+      <div className="container page-body">
         {activeTab === 'student-profile' && <StudentProfileView />}
         {activeTab === 'my-class' && <StudentClassView userClassId={userClassId} />}
         {activeTab === 'anasayfa' && (
@@ -399,6 +427,10 @@ export default function App() {
             setMinRank={setMinRank}
             maxRank={maxRank}
             setMaxRank={setMaxRank}
+            minScore={minScore}
+            setMinScore={setMinScore}
+            maxScore={maxScore}
+            setMaxScore={setMaxScore}
             simFilterType={simFilterType}
             setSimFilterType={setSimFilterType}
             allDepartments={allDepartments}
@@ -421,7 +453,7 @@ export default function App() {
 
         {activeTab === 'puan-hesapla' && <PuanHesaplamaView />}
         {activeTab === 'holland-test' && <HollandTestView />}
-        {activeTab === 'teacher-panel' && <TeacherPanelView />}
+        {activeTab === 'teacher-panel' && <TeacherPanelView userRole={userRole} />}
       </div>
 
       <Footer />
